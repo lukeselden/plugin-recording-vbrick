@@ -18,7 +18,7 @@ export interface PluginConfig {
     client_id: string;
     /**
      * OAuth redirect uri. This must match the Vbrick Rev settings and plugin URI exactly
-     * @example https://my.pexip.instance/subpath/redirect
+     * @example https://my.pexip.instance/branding-path/redirect
      */
     redirect_uri: string;
   }
