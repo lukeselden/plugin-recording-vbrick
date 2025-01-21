@@ -6,6 +6,7 @@ import { getConferenceAlias } from './conferenceAlias'
 import { initButtonGroup } from './buttons/button'
 import type { InfinityParticipant } from '@pexip/plugin-api'
 import { LocalStorageKey } from './LocalStorageKey'
+import { startVideoConferenceRecording, stopVideoConferenceRecording } from './vc-recording'
 
 let videoId: string = ''
 
@@ -82,31 +83,15 @@ const startRecording = async (): Promise<void> => {
   const uri = `${conferenceAlias}@${domain}`
   const pin = ''
 
-  const path = '/api/v2/vc/start-recording'
-  const url = new URL(path, config.vbrick.url as string)
+  const result = await startVideoConferenceRecording(uri, uri, pin);
 
-  const body = {
-    title: uri,
-    sipAddress: uri,
-    sipPin: pin
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    headers: {
-      Authorization: `VBrick ${Auth.getAccessToken()}`,
-      'Content-Type': 'application/json'
-    }
-  })
-
-  if (response.status === 200) {
-    const json = await response.json()
-    videoId = json.videoId
+  if (result.videoId) {
+    videoId = result.videoId;
     localStorage.setItem(LocalStorageKey.VideoId, videoId);
     emitter.emit('changed')
     await plugin.ui.showToast({ message: 'Recording requested. It will start in a few seconds.' })
   } else {
+    // result.error
     await plugin.ui.showToast({ message: 'Cannot start the recording' })
   }
 }
@@ -114,20 +99,9 @@ const startRecording = async (): Promise<void> => {
 const stopRecording = async (): Promise<void> => {
   const plugin = getPlugin()
 
-  const path = '/api/v2/vc/stop-recording'
-  const url = new URL(path, config.vbrick.url as string)
+  const stopResult = await stopVideoConferenceRecording(videoId);
 
-  const body = { videoId }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    headers: {
-      Authorization: `VBrick ${Auth.getAccessToken()}`,
-      'Content-Type': 'application/json'
-    }
-  })
-  if (response.status === 200) {
+  if (stopResult.success) {
     videoId = ''
     localStorage.removeItem(LocalStorageKey.VideoId)
     emitter.emit('changed')
