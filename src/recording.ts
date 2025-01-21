@@ -5,8 +5,7 @@ import { getPlugin } from './plugin'
 import { getConferenceAlias } from './conferenceAlias'
 import { initButtonGroup } from './buttons/button'
 import type { InfinityParticipant } from '@pexip/plugin-api'
-
-const localStorageKey = 'vbrick:videoId'
+import { LocalStorageKey } from './LocalStorageKey'
 
 let videoId: string = ''
 
@@ -104,7 +103,7 @@ const startRecording = async (): Promise<void> => {
   if (response.status === 200) {
     const json = await response.json()
     videoId = json.videoId
-    localStorage.setItem(localStorageKey, videoId)
+    localStorage.setItem(LocalStorageKey.VideoId, videoId);
     emitter.emit('changed')
     await plugin.ui.showToast({ message: 'Recording requested. It will start in a few seconds.' })
   } else {
@@ -130,7 +129,7 @@ const stopRecording = async (): Promise<void> => {
   })
   if (response.status === 200) {
     videoId = ''
-    localStorage.removeItem(localStorageKey)
+    localStorage.removeItem(LocalStorageKey.VideoId)
     emitter.emit('changed')
     await plugin.ui.showToast({ message: 'Recording stopped' })
   } else {

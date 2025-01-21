@@ -1,9 +1,10 @@
 import EventEmitter from 'eventemitter3'
 import { config } from './config'
+import { LocalStorageKey } from './LocalStorageKey'
 
-const localStorageKey = 'vbrick:user-authenticated'
-
-let user: User | null = JSON.parse(localStorage.getItem(localStorageKey) ?? 'null')
+let user: User | null = JSON.parse(
+  localStorage.getItem(LocalStorageKey.User) ?? 'null'
+)
 
 let codeVerifier: string
 
@@ -54,7 +55,7 @@ const createAccessToken = async (code: string): Promise<void> => {
   })
 
   user = await response.json()
-  localStorage.setItem(localStorageKey, JSON.stringify(user))
+  localStorage.setItem(LocalStorageKey.User, JSON.stringify(user))
 
   if (intervalRefreshToken === 0) {
     startRefreshTokenInterval(user?.expires_in ?? defaultExpiresIn - marginInterval)
@@ -95,7 +96,7 @@ const refreshAccessToken = async (): Promise<void> => {
   })
 
   user = await response.json()
-  localStorage.setItem(localStorageKey, JSON.stringify(user))
+  localStorage.setItem(LocalStorageKey.User, JSON.stringify(user))
 
   if (intervalRefreshToken === 0) {
     startRefreshTokenInterval(user?.expires_in ?? defaultExpiresIn - marginInterval)
@@ -138,7 +139,7 @@ const logout = async (): Promise<void> => {
 }
 
 const cleanSession = (): void => {
-  localStorage.removeItem(localStorageKey)
+  localStorage.removeItem(LocalStorageKey.User)
   user = null
 }
 
