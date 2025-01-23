@@ -1,29 +1,27 @@
 import EventEmitter from 'eventemitter3'
-import { Auth } from './auth'
 import { config } from './config'
 import { getPlugin } from './plugin'
 import { getConferenceAlias } from './conferenceAlias'
 import { initButtonGroup } from './buttons/button'
 import type { InfinityParticipant } from '@pexip/plugin-api'
-import { LocalStorageKey } from './LocalStorageKey'
-import { startVideoConferenceRecording, stopVideoConferenceRecording } from './vc-recording'
-
-let videoId: string = ''
+import { vcRecordingApi } from './vc-recording'
+import { clearRecording, getRecording, setRecording, isRecording } from './vbrick/recordingState'
+import { RecordingApi } from './vbrick/contracts'
 
 let participants: InfinityParticipant[]
+
+const recordingApi: RecordingApi = vcRecordingApi;
 
 const init = (): void => {
   const plugin = getPlugin()
 
   // Initialize the videoId at the beginning of the conference
   plugin.events.authenticatedWithConference.add(() => {
-    videoId = ''
+    clearRecording()
   })
 
   plugin.events.participantJoined.add(async (event) => {
-    const vbrickHostname = new URL(config.vbrick.url as string).hostname
-
-    if (event.participant.uri.split('@')[1] === vbrickHostname) {
+    if (recordingApi.isRecordingParticipant(event.participant)) {
       (plugin.conference as any).sendRequest({
         path: 'transform_layout',
         method: 'POST',
@@ -40,9 +38,7 @@ const init = (): void => {
   })
 
   plugin.events.participantLeft.add((event) => {
-    const vbrickHostname = new URL(config.vbrick.url as string).hostname
-
-    if (event.participant.uri.split('@')[1] === vbrickHostname) {
+    if (recordingApi.isRecordingParticipant(event.participant)) {
       (plugin.conference as any).sendRequest({
         path: 'transform_layout',
         method: 'POST',
@@ -63,8 +59,8 @@ const init = (): void => {
 
   plugin.events.participantLeft.add(async (event) => {
     const participant = event.participant
-    if (isRecordingParticipant(participant)) {
-      videoId = ''
+    if (recordingApi.isRecordingParticipant(participant)) {
+      clearRecording();
       await initButtonGroup()
     }
   })
@@ -81,13 +77,14 @@ const startRecording = async (): Promise<void> => {
   const conferenceAlias = getConferenceAlias()
   const domain = config.infinity.sip_domain
   const uri = `${conferenceAlias}@${domain}`
-  const pin = ''
 
-  const result = await startVideoConferenceRecording(uri, uri, pin);
+  const result = await recordingApi.startRecording(uri);
 
-  if (result.videoId) {
-    videoId = result.videoId;
-    localStorage.setItem(LocalStorageKey.VideoId, videoId);
+  if (result.success) {
+    setRecording({
+      videoId: result.data.videoId
+    });
+
     emitter.emit('changed')
     await plugin.ui.showToast({ message: 'Recording requested. It will start in a few seconds.' })
   } else {
@@ -99,20 +96,18 @@ const startRecording = async (): Promise<void> => {
 const stopRecording = async (): Promise<void> => {
   const plugin = getPlugin()
 
-  const stopResult = await stopVideoConferenceRecording(videoId);
+  const recording = getRecording();
+  const stopResult = recording 
+    ? await recordingApi.stopRecording(recording)
+    : undefined;
 
-  if (stopResult.success) {
-    videoId = ''
-    localStorage.removeItem(LocalStorageKey.VideoId)
+  if (stopResult?.success) {
+    clearRecording();
     emitter.emit('changed')
     await plugin.ui.showToast({ message: 'Recording stopped' })
   } else {
     await plugin.ui.showToast({ message: 'Cannot stop the recording' })
   }
-}
-
-const isRecording = (): boolean => {
-  return videoId !== ''
 }
 
 /**
@@ -122,20 +117,11 @@ const isAnotherRecordingActive = (): boolean => {
   if (participants == null) {
     return false
   }
-  const vbrickDomain = new URL(config.vbrick.url as string).hostname
-  const recordingParticipant = participants.find((participant) => {
-    const domain = participant.uri.split('@')[1]
-    return domain === vbrickDomain
-  })
-  const active = recordingParticipant != null
-  return active
-}
 
-const isRecordingParticipant = (participant: InfinityParticipant): boolean => {
-  const domain = new URL(config.vbrick.url as string).hostname
-  const recordingUri = `sip:${Auth.getUser()?.username}@${domain}`
-
-  return participant.uri === recordingUri
+  const active = participants.some(participant => {
+    return recordingApi.isRecordingParticipant(participant)
+  });
+  return active;
 }
 
 const emitter = new EventEmitter()
