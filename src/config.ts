@@ -1,7 +1,17 @@
 const response = await fetch('./config.json')
 const config: PluginConfig = await response.json()
 
+export type RecordingType = "sip" | "rtmp";
+
+
 export interface PluginConfig {
+  /**
+   * Method to do recording. Can be:
+   * 'sip' - CLOUD REV ONLY - record using SIP
+   * 'rtmp' - ON-PREM REV RTMP RECORDER ONLY - requires additional Vbrick software configured
+   * @default "sip"
+   */
+  recording_type: RecordingType;
   /**
    * Vbrick Rev configuration
    */
@@ -21,7 +31,7 @@ export interface PluginConfig {
      * @example https://my.pexip.instance/branding-path/redirect
      */
     redirect_uri: string;
-  }
+  },
   /**
    * Pexip infinity settings
    */
@@ -31,7 +41,38 @@ export interface PluginConfig {
      * @example my.pexip.instance
      */
     sip_domain: string;
+  },
+  /**
+   * Configuration for Vbrick RTMP Recorder
+   * Only required if recording_type is set to "rtmp"
+   */
+  recorder: {
+    /**
+     * url of rtmp recording service
+     * @example https://onprem-recorder.company.com
+     */
+    url: string;
+    /**
+     * template name to be passed to RTMP Recorder API - used for setting video metadata
+     */
+    template?: string;
+
+    /**
+     * Optional display name to use for participants list
+     */
+    displayName?: string;
+
+    /**
+     * whether to use 'rtmp' or 'auto' for the dial out protocol
+     * @see {@link https://docs.pexip.com/api_client/api_rest.htm#dial}
+     * @default "auto"
+     */
+    useLegacyDialOutAPI?: boolean
+    
   }
 }
 
 export { config }
+
+
+
