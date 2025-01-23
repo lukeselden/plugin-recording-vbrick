@@ -5,12 +5,15 @@ import { getConferenceAlias } from './conferenceAlias'
 import { initButtonGroup } from './buttons/button'
 import type { InfinityParticipant } from '@pexip/plugin-api'
 import { vcRecordingApi } from './vc-recording'
+import { rtmpRecordingApi } from './rtmp-recording'
 import { clearRecording, getRecording, setRecording, isRecording } from './vbrick/recordingState'
 import { RecordingApi } from './vbrick/contracts'
 
 let participants: InfinityParticipant[]
 
-const recordingApi: RecordingApi = vcRecordingApi;
+const recordingApi: RecordingApi = config.recording_type === 'rtmp'
+  ? rtmpRecordingApi
+  : vcRecordingApi;
 
 const init = (): void => {
   const plugin = getPlugin()
@@ -81,9 +84,7 @@ const startRecording = async (): Promise<void> => {
   const result = await recordingApi.startRecording(uri);
 
   if (result.success) {
-    setRecording({
-      videoId: result.data.videoId
-    });
+    setRecording(result.data);
 
     emitter.emit('changed')
     await plugin.ui.showToast({ message: 'Recording requested. It will start in a few seconds.' })

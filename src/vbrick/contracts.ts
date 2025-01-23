@@ -4,6 +4,9 @@ import { ApiResult } from './request'
 export interface Recording {
   videoId?: string;
   status?: VideoStatus;
+  rtmpStreamKey?: string;
+  rtmpUrl?: string;
+  lastModified?: string;
 }
 
 export type VideoStatus = "Ready" | "Processing" | "ProcessingFailed" | "ReadyButProcessingFailed" | "NotUploaded" | "Uploading" | "UploadingFinished" | "UploadFailed" | "Ingesting" | "IngestingNotified" | "DownloadFailed" | "Connecting" | "ConnectingFailed" | "WaitingForStream" | "RecordingStream" | "StreamingFailed" | "StartRecording" | "RecordingInitializing" | "Recording" | "StopRecording" | "RecordingFinished" | "RecordingFailed" | "ViewingHoursNotAvailable";

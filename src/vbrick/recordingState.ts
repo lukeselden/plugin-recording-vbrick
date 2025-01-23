@@ -21,5 +21,8 @@ export const clearRecording = () => {
 }
 
 export const isRecording = (): boolean => {
-  return !!recording?.videoId;
+  const isRtmp = config.recording_type === 'rtmp';
+  return isRtmp
+    ? !!recording?.rtmpStreamKey
+    : !!recording?.videoId;
 }
