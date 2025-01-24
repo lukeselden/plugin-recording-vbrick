@@ -14,6 +14,7 @@
   "recording_type": "sip",
   "recorder": {
     "url": "https://rtmp-recorder.example.com",
-    "useLegacyDialOutAPI": false
+    "display_name": "Vbrick Recorder",
+    "legacy_dialout_api": false
   }
 }

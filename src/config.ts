@@ -60,14 +60,14 @@ export interface PluginConfig {
     /**
      * Optional display name to use for participants list
      */
-    displayName?: string;
+    display_name?: string;
 
     /**
      * whether to use 'rtmp' or 'auto' for the dial out protocol
      * @see {@link https://docs.pexip.com/api_client/api_rest.htm#dial}
      * @default "auto"
      */
-    useLegacyDialOutAPI?: boolean
+    legacy_dialout_api?: boolean
     
   }
 }

@@ -71,11 +71,11 @@ async function dialOutParticipant(rtmpUrl: string) {
   await plugin.conference.dialOut({
     destination: rtmpUrl,
     // use 'auto' (call routing rules) unless flag is set in the config
-    protocol: config.recorder.useLegacyDialOutAPI ? 'rtmp' : 'auto',
+    protocol: config.recorder.legacy_dialout_api ? 'rtmp' : 'auto',
     role: 'GUEST',
     streaming: 'yes',
-    ...config.recorder.displayName && {
-      remote_display_name: config.recorder.displayName
+    ...config.recorder.display_name && {
+      text: config.recorder.display_name
     }
   });
 
