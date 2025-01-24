@@ -1,18 +1,28 @@
+import fs from 'node:fs/promises';
 import { defineConfig } from 'vite'
 import mkcert from 'vite-plugin-mkcert'
 
-import devConfig from './vite.json'
+const devConfig = JSON.parse(await fs.readFile('./vite.json', 'utf-8').catch(() => 'null'));
+const srcConfig = JSON.parse(await fs.readFile('./src/config.json', 'utf-8').catch(() => 'null'));
+
+if (srcConfig) {
+  console.log('Using src/config.json config')
+}
+if (devConfig) {
+  console.log('Overriding config with values in ./vite.json');
+}
 
 const config = {
-  infinityUrl: "https://example.com",
   port: 5173,
   brandingPath: "/local-plugin",
   pluginName: "vbrick",
+  ...srcConfig,
   ...devConfig
 };
 
 if (!config.infinityUrl || config.infinityUrl === "https://example.com") {
-  throw new Error('FATAL: Update vite.json with a valid infinityUrl value');
+  console.warn(`No infinityUrl set in config files, using infinity.sip_domain (${config.infinity?.sip_domain})`);
+  config.infinityUrl = config.infinity?.sip_domain;
 }
 
 const pluginPath = `${config.brandingPath}/branding/plugins/${config.pluginName}`;

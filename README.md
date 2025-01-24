@@ -1,6 +1,6 @@
 # Plugin: Recording for vBrick
 
-This plugin allow the user to have recording the conference in the vBrick platform. Once the user click on the recording button, the Vbrick will join to the VMR as a SIP participant and will record the call.
+This plugin allow the user to have recording the conference in the vBrick platform. Once the user click on the recording button, the Vbrick will join to the VMR as a SIP/RTMP participant and will record the call.
 
 ## Plugin Configuration
 
@@ -41,6 +41,15 @@ You have to provision the `client_id` and `redirect_uri` into Vbrick.
     - **key:** It's the value that we will use as `client_id`.
     - **authorized redirect uris:** Enter the `redirect_uri` that you want to use.
   5. Click on `Create`.
+
+By default this plugin records via SIP (Video Conference Recording), which is a Vbrick Rev Cloud-only feature. To use Vbrick On-Prem RTMP Recorder feature with this plugin add the following settings to `config.json`, replacing `https://rtmp-recorder.example.com` with the URL of the Vbrick On-Prem RTMP Recorder service.
+
+```json
+  "recording_type": "rtmp",
+  "recorder": {
+    "url": "https://rtmp-recorder.example.com"
+  }
+```
 
 ## Pexip Infinity Configuration
 
