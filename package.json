@@ -7,14 +7,16 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "vite",
         "build": "vite build",
-        "lint": "eslint ."
+        "lint": "eslint .",
+        "build:util": "vite build && node scripts/build-config_util.mjs"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "dependencies": {
         "@pexip/plugin-api": "19.3.2",
-        "eventemitter3": "^5.0.1"
+        "eventemitter3": "^5.0.1",
+        "fflate": "^0.8.2"
     },
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^7.12.0",
