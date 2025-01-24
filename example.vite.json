@@ -1,0 +1,19 @@
+{
+  "infinityUrl": "https://example.com",
+  "port": 5173,
+  "brandingPath": "/local-plugin",
+  "pluginName": "vbrick",
+  "vbrick": {
+    "url": "https://example.rev.vbrick.com",
+    "client_id": "local-plugin",
+    "redirect_uri": "https://localhost:5173/local-plugin/redirect"
+  },
+  "infinity": {
+    "sip_domain": "onpexip.vbrick.com"
+  },
+  "recording_type": "sip",
+  "recorder": {
+    "url": "https://rtmp-recorder.example.com",
+    "useLegacyDialOutAPI": false
+  }
+}
