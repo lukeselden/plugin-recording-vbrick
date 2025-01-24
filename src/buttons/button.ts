@@ -10,6 +10,15 @@ import { StopButtonPayload } from './buttonGroup/StopButtonPayload'
 import { getPlugin } from '../plugin'
 
 import type { Button, RPCCallPayload } from '@pexip/plugin-api'
+import { vbrickIdleIcon, vbrickIcon, vbrickRecordingIcon } from './buttonGroup/VbrickIcons'
+import { isRecording } from '../vbrick/recordingState'
+
+const getMainIcon = () => {
+  const main = isRecording() ? vbrickRecordingIcon : vbrickIdleIcon;
+  return {
+    custom: { main, hover: vbrickIcon }
+  };
+};
 
 const baseButtonPayload: RPCCallPayload<'ui:button:add'> = {
   position: 'toolbar',
@@ -22,9 +31,9 @@ let button: Button<'toolbar'>
 
 export const initButton = async (): Promise<void> => {
   const plugin = getPlugin()
-
   const payload: RPCCallPayload<'ui:button:add'> = {
     ...baseButtonPayload,
+    icon: getMainIcon(),
     group: undefined,
     opensPopup: {
       id: authPopUpId,
@@ -43,6 +52,7 @@ export const initButton = async (): Promise<void> => {
 export const initButtonGroup = async (): Promise<void> => {
   const payload = {
     ...baseButtonPayload,
+    icon: getMainIcon(),
     group: [
       Recording.isRecording() ? StopButtonPayload : StartButtonPayload,
       VideosButtonPayload,
