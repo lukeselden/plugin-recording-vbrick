@@ -3,7 +3,10 @@
         "browser": true,
         "es2021": true
     },
-    "extends": "standard-with-typescript",
+    "extends": [
+        "love",
+        "prettier"
+    ],
     "overrides": [{
         "files": [
             "./src/**/*.ts"
@@ -14,8 +17,5 @@
         "sourceType": "module",
         "project": ["./tsconfig.json"]
     },
-    "ignorePatterns": [
-        "setupTests.ts",
-        "lib"
-    ]
+    "ignorePatterns": ["dist"]
 }

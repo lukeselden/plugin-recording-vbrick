@@ -1,26 +1,28 @@
 import EventEmitter from 'eventemitter3'
 import { config } from './config'
-import { getPlugin } from './plugin'
-import { getConferenceAlias } from './conferenceAlias'
-import { initButtonGroup } from './buttons/button'
+import { updateButton } from './button'
 import type { InfinityParticipant } from '@pexip/plugin-api'
+import { plugin } from './plugin'
+import { conferenceAlias } from './conferenceAlias'
+import { LocalStorageKey } from './LocalStorageKey'
+
 import { vcRecordingApi } from './vc-recording'
 import { rtmpRecordingApi } from './rtmp-recording'
 import { clearRecording, getRecording, setRecording, isRecording } from './vbrick/recordingState'
 import { RecordingApi } from './vbrick/contracts'
 
-let participants: InfinityParticipant[]
+let participants: InfinityParticipant[] = []
 
 const recordingApi: RecordingApi = config.recording_type === 'rtmp'
   ? rtmpRecordingApi
   : vcRecordingApi;
 
 const init = (): void => {
-  const plugin = getPlugin()
-
   // Initialize the videoId at the beginning of the conference
   plugin.events.authenticatedWithConference.add(() => {
-    clearRecording()
+    if (participants.length === 0) {
+      clearRecording()
+    }
   })
 
   plugin.events.participantJoined.add(async (event) => {
@@ -35,8 +37,14 @@ const init = (): void => {
         }
       })
       // With this we avoid having to pass the PIN (host or guest) to Vbrick
-      await plugin.conference.setRole({ role: 'chair', participantUuid: event.participant.uuid })
-      await plugin.conference.setRole({ role: 'guest', participantUuid: event.participant.uuid })
+      await plugin.conference.setRole({
+        role: 'chair',
+        participantUuid: event.participant.uuid
+      })
+      await plugin.conference.setRole({
+        role: 'guest',
+        participantUuid: event.participant.uuid
+      })
     }
   })
 
@@ -64,20 +72,19 @@ const init = (): void => {
     const participant = event.participant
     if (recordingApi.isRecordingParticipant(participant)) {
       clearRecording();
-      await initButtonGroup()
+      await updateButton()
     }
   })
 }
 
 const startRecording = async (): Promise<void> => {
-  const plugin = getPlugin()
-
   if (isAnotherRecordingActive()) {
-    await plugin.ui.showToast({ message: 'Another user has already enabled the recording' })
+    await plugin.ui.showToast({
+      message: 'Another user has already enabled the recording'
+    })
     return
   }
 
-  const conferenceAlias = getConferenceAlias()
   const domain = config.infinity.sip_domain
   const uri = `${conferenceAlias}@${domain}`
 
@@ -87,7 +94,9 @@ const startRecording = async (): Promise<void> => {
     setRecording(result.data);
 
     emitter.emit('changed')
-    await plugin.ui.showToast({ message: 'Recording requested. It will start in a few seconds.' })
+    await plugin.ui.showToast({
+      message: 'Recording requested. It will start in a few seconds.'
+    })
   } else {
     // result.error
     await plugin.ui.showToast({ message: 'Cannot start the recording' })

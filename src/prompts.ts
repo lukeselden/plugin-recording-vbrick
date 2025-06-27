@@ -1,9 +1,7 @@
 import { Auth } from './auth'
-import { getPlugin } from './plugin'
+import { plugin } from './plugin'
 
 export const showLogoutPrompt = async (): Promise<void> => {
-  const plugin = getPlugin()
-
   const primaryAction = 'Log out'
   const prompt = await plugin.ui.addPrompt({
     title: 'Log out',

@@ -1,14 +1,5 @@
-import { getPlugin } from './plugin'
+export let conferenceAlias = ''
 
-let conferenceAlias = ''
-
-export const subscribeConferenceAlias = (): void => {
-  const plugin = getPlugin()
-  plugin.events.authenticatedWithConference.add((conference) => {
-    conferenceAlias = conference.conferenceAlias
-  })
-}
-
-export const getConferenceAlias = (): string => {
-  return conferenceAlias
+export const setConferenceAlias = (alias: string): void => {
+  conferenceAlias = alias
 }

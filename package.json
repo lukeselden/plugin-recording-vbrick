@@ -14,18 +14,18 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@pexip/plugin-api": "19.3.2",
+        "@pexip/plugin-api": "19.3.3",
         "eventemitter3": "^5.0.1",
         "fflate": "^0.8.2"
     },
     "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "^7.12.0",
+        "@typescript-eslint/eslint-plugin": "^7.13.0",
         "eslint": "^8.57.0",
         "eslint-config-love": "^47.0.0",
         "eslint-config-prettier": "^9.1.0",
-        "prettier": "^3.3.1",
+        "prettier": "^3.3.3",
         "typescript": "^5.4.5",
-        "vite": "^5.2.12",
-        "vite-plugin-mkcert": "^1.17.5"
+        "vite": "^5.4.5",
+        "vite-plugin-mkcert": "^1.17.6"
     }
 }
