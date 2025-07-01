@@ -4,7 +4,6 @@ import { updateButton } from './button'
 import type { InfinityParticipant } from '@pexip/plugin-api'
 import { plugin } from './plugin'
 import { conferenceAlias } from './conferenceAlias'
-import { LocalStorageKey } from './LocalStorageKey'
 
 import { vcRecordingApi } from './vc-recording'
 import { rtmpRecordingApi } from './rtmp-recording'

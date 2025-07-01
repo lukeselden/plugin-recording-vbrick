@@ -1,14 +1,12 @@
 import type { Recording } from './contracts'
-import { LocalStorageKey } from '../LocalStorageKey'
+import { clearLocalStorage, getLocalStorage, LocalStorageKey, setLocalStorage } from '../LocalStorageKey'
 import { config } from '../config'
 
-let recording: Recording | null = JSON.parse(
-  localStorage.getItem(LocalStorageKey.Recording) ?? 'null'
-)
+let recording: Recording | null = getLocalStorage(LocalStorageKey.Recording)
 
 export const setRecording = (value: Recording | null = null): void => {
   recording = value;
-  localStorage.setItem(LocalStorageKey.Recording, JSON.stringify(recording))
+  setLocalStorage(LocalStorageKey.Recording, recording)
 }
 
 export const getRecording = (): Recording | null => {
@@ -17,7 +15,7 @@ export const getRecording = (): Recording | null => {
 
 export const clearRecording = () => {
   recording = null;
-  localStorage.removeItem(LocalStorageKey.Recording);
+  clearLocalStorage(LocalStorageKey.Recording);
 }
 
 export const isRecording = (): boolean => {

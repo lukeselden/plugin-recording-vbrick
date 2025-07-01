@@ -1,10 +1,8 @@
 import EventEmitter from 'eventemitter3'
 import { config } from './config'
-import { LocalStorageKey } from './LocalStorageKey'
+import { clearLocalStorage, getLocalStorage, LocalStorageKey, setLocalStorage } from './LocalStorageKey'
 
-let user: User | null = JSON.parse(
-  localStorage.getItem(LocalStorageKey.User) ?? 'null'
-)
+let user: User | null = getLocalStorage(LocalStorageKey.User);
 
 let codeVerifier: string
 
@@ -55,7 +53,7 @@ const createAccessToken = async (code: string): Promise<void> => {
   })
 
   user = await response.json()
-  localStorage.setItem(LocalStorageKey.User, JSON.stringify(user))
+  setLocalStorage(LocalStorageKey.User, user);
 
   if (intervalRefreshToken === 0) {
     startRefreshTokenInterval(
@@ -102,8 +100,8 @@ const refreshAccessToken = async (): Promise<void> => {
   })
 
   user = await response.json()
-  localStorage.setItem(LocalStorageKey.User, JSON.stringify(user))
-
+  setLocalStorage(LocalStorageKey.User, user)
+  
   if (intervalRefreshToken === 0) {
     startRefreshTokenInterval(
       user?.expires_in ?? defaultExpiresIn - marginInterval
