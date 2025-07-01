@@ -44,6 +44,5 @@ if (await Auth.isSessionValid()) {
   await Auth.refreshAccessToken()
 } else {
   Auth.cleanSession()
+  await updateButton()
 }
-
-await updateButton()
