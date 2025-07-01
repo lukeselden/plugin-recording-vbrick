@@ -2,7 +2,22 @@ import EventEmitter from 'eventemitter3'
 import { config } from './config'
 import { clearLocalStorage, getLocalStorage, LocalStorageKey, setLocalStorage } from './LocalStorageKey'
 
-let user: User | null = getLocalStorage(LocalStorageKey.User);
+let user: User | null;
+function loadUser() {
+  user = getLocalStorage(LocalStorageKey.User);
+  if (user?.expiration) {
+    user.expiration = new Date(user.expiration);
+  }
+}
+function saveUser(value?: User | null) {
+  user = value || null;
+  if (user) {
+    setLocalStorage(LocalStorageKey.User, user);
+  } else {
+    clearLocalStorage(LocalStorageKey.User);
+  }
+}
+loadUser();
 
 let codeVerifier: string
 
@@ -20,6 +35,7 @@ interface User {
   refresh_token: string
   token_type: string
   expires_in: number
+  expiration: Date
 }
 
 const getAuthUrl = async (): Promise<string> => {
@@ -52,8 +68,9 @@ const createAccessToken = async (code: string): Promise<void> => {
     }
   })
 
-  user = await response.json()
-  setLocalStorage(LocalStorageKey.User, user);
+  const data: User = await response.json()
+  data.expiration = new Date(Date.now() + data.expires_in * 1000);
+  saveUser(data);
 
   if (intervalRefreshToken === 0) {
     startRefreshTokenInterval(
@@ -145,8 +162,7 @@ const logout = async (): Promise<void> => {
 }
 
 const cleanSession = (): void => {
-  localStorage.removeItem(LocalStorageKey.User)
-  user = null
+  saveUser(null);
 }
 
 const startRefreshTokenInterval = (interval: number): void => {
