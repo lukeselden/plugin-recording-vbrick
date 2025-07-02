@@ -5,10 +5,8 @@ import { clearLocalStorage, getLocalStorage, LocalStorageKey, setLocalStorage } 
 let user: User | null;
 function loadUser() {
   user = getLocalStorage(LocalStorageKey.User);
-  if (user?.expiration) {
-    user.expiration = new Date(user.expiration);
-  }
 }
+loadUser();
 function saveUser(value?: User | null) {
   user = value || null;
   if (user) {
@@ -17,7 +15,6 @@ function saveUser(value?: User | null) {
     clearLocalStorage(LocalStorageKey.User);
   }
 }
-loadUser();
 
 let codeVerifier: string
 
@@ -90,38 +87,34 @@ const getUser = (): User | null => {
 }
 
 const isAuthenticated = (): boolean => {
-  return user !== null
+  return !!user?.access_token
+}
+
+const getAuthHeader = (): Record<string, string> => {
+  return { authorization: `vbrick ${user?.access_token}` }
 }
 
 const refreshAccessToken = async (): Promise<void> => {
-  if (user === null) {
+  if (!isAuthenticated()) {
     throw new Error('Cannot recover the user info from the localStorage')
   }
 
-  const path = '/api/v2/oauth2/token'
+  const path = '/api/v2/user/extend-session'
   const url = new URL(path, config.vbrick.url)
-
-  const body = {
-    grant_type: 'refresh_token',
-    client_id: config.vbrick.client_id,
-    redirect_uri: config.vbrick.redirect_uri,
-    refresh_token: user.refresh_token
-  }
 
   const response = await fetch(url, {
     method: 'POST',
-    body: JSON.stringify(body),
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
+    headers: getAuthHeader()
+  });
 
-  user = await response.json()
-  setLocalStorage(LocalStorageKey.User, user)
-  
+  const {expiration} = await response.json()
+  const expireDelta = new Date(expiration).getTime() - Date.now();
+  user!.expires_in = Math.floor(expireDelta / 1000);
+  saveUser(user);
+
   if (intervalRefreshToken === 0) {
     startRefreshTokenInterval(
-      user?.expires_in ?? defaultExpiresIn - marginInterval
+      (user?.expires_in ?? defaultExpiresIn) - marginInterval
     )
   }
 
@@ -131,31 +124,30 @@ const refreshAccessToken = async (): Promise<void> => {
 const isSessionValid = async (): Promise<boolean> => {
   const path = '/api/v2/user/session'
   const url = new URL(path, config.vbrick.url)
+  if (!isAuthenticated()) return false;
   const response = await fetch(url, {
-    headers: {
-      Authorization: `vbrick ${user?.access_token}`
-    }
-  })
-  if (response.status === 200) {
-    return true
-  }
-  return false
+    headers: getAuthHeader()
+  }).catch(e => console.error(e));
+
+  return response?.status === 200;
 }
 
 const logout = async (): Promise<void> => {
   // Send the request to logoff endpoint
   const path = '/api/v2/user/logoff'
   const url = new URL(path, config.vbrick.url)
-  await fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      userId: user?.userId
-    }),
-    headers: {
-      Authorization: `vbrick ${user?.access_token}`,
-      'Content-Type': 'application/json'
-    }
-  })
+  if (isAuthenticated()) {
+    await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        userId: user!.userId
+      }),
+      headers: {
+        ...getAuthHeader(),
+        'Content-Type': 'application/json'
+      }
+    }).catch(e => console.warn(e));
+  }
   cleanSession()
   stopRefreshInterval()
   emitter.emit('logout')
