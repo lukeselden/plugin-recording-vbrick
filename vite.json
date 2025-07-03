@@ -1,5 +1,9 @@
 {
-  "infinityUrl": "https://nightly.pexip.com",
   "port": 5173,
-  "brandingPath": "/local-plugin"
-}
+  "outDir": "dist",
+  "main": "index.html",
+  "pluginName": "vbrick",
+  "builderOutput": "build/branding-helper.html",
+  
+  "infinity_url": "https://pexip.example.com",
+  "branding_path": "local-plugin",

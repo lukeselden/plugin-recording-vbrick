@@ -1,37 +1,114 @@
+// @ts-check
 import fs from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { defineConfig } from 'vite'
 import mkcert from 'vite-plugin-mkcert'
 
 const devConfig = JSON.parse(await fs.readFile('./vite.json', 'utf-8').catch(() => 'null'));
-const srcConfig = JSON.parse(await fs.readFile('./src/config.json', 'utf-8').catch(() => 'null'));
 
-if (srcConfig) {
-  console.log('Using src/config.json config')
-}
 if (devConfig) {
   console.log('Overriding config with values in ./vite.json');
 }
 
 const config = {
   port: 5173,
-  brandingPath: "/local-plugin",
+  main: "index.html",
+  outDir: "dist",
+  branding_path: "local-plugin",
   pluginName: "vbrick",
-  ...srcConfig,
   ...devConfig
 };
 
-if (!config.infinityUrl || config.infinityUrl === "https://example.com") {
-  console.warn(`No infinityUrl set in config files, using infinity.sip_domain (${config.infinity?.sip_domain})`);
-  config.infinityUrl = config.infinity?.sip_domain;
+if (!config.infinity_url || config.infinity_url === "https://pexip.example.com") {
+  console.warn(`No infinity_url set in config files, using infinity.sip_domain (${config.infinity?.sip_domain})`);
+  config.infinity_url = config.infinity?.sip_domain;
 }
 
-const pluginPath = `${config.brandingPath}/branding/plugins/${config.pluginName}`;
+const pluginPath = `${config.branding_path}/branding/plugins/${config.pluginName}`;
+
+const manifestPath = `${config.branding_path}/branding/manifest.json`;
+
+const overrideConfigPlugin = () => ({
+  name: 'configure-server',
+  configureServer(server) {
+    function sendJson(res, data) {
+      res.statusCode = 200;
+      res.setHeader('content-type', 'application/json');
+      res.write(JSON.stringify(data));
+      res.end();
+    }
+    async function overrideManifest() {
+      try {
+        const url = new URL(`${config.branding_path}/branding/manifest.json`, config.infinity_url);
+        const remoteResponse = await fetch(url);
+        if (!remoteResponse.ok) {
+          return {
+            ok: false,
+            statusCode: remoteResponse.status,
+            statusMessage: remoteResponse.statusMessage
+          };
+        }
+        const manifest = await remoteResponse.json();
+        // add plugin entry to manifest
+        if (!Array.isArray(manifest.plugins)) {
+          manifest.plugins = [];
+        }
+        manifest.plugins.push({
+          src: '/index.html',
+          sandboxValues: ['allow-same-origin', 'allow-popups', 'allow-forms']
+        });
+        return {
+          ok: true,
+          manifest
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          statusCode: 500,
+          statusMessage: error.message
+        };
+      }
+    }
+    server.middlewares.use((req, res, next) => {
+      switch (req.url) {
+        case '/config.json':
+        case `${pluginPath}/config.json`:
+          sendJson(res, config);
+          return;
+        case manifestPath:
+          overrideManifest()
+            .then(result => {
+              if (result.ok) {
+                sendJson(res, result.manifest);
+              } else {
+                res.statusCode = result.statusCode;
+                res.statusMessage = result.statusMessage;
+                res.end();
+              }
+            });
+          return;
+        default:
+          next();
+      }
+    });
+  },
+})
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const outDir = resolve(__dirname, config.outDir);
+const main = resolve(__dirname, config.main);
+
 
 export default defineConfig({
   base: './',
   build: {
     target: 'esnext',
+    outDir,
     rollupOptions: {
+      input: {
+        main
+      },
       output: {
         entryFileNames: 'assets/[name].js'
       }
@@ -40,35 +117,23 @@ export default defineConfig({
   server: {
     https: true,
     port: config.port,
-    open: config.brandingPath + '/',
+    open: config.branding_path + '/',
+    cors: true,
     proxy: {
-      [`${pluginPath}/config.json`]: {
-        bypass(req, res, options) {
-          res.statusCode = 200;
-          res.setHeader('content-type', 'application/json');
-          res.write(JSON.stringify(config));
-          res.end();
-          return req.url;
-        }
-      },
-      [`^${pluginPath}`]: {
-        bypass(req, res, options) {
-          return req.url.replace(pluginPath, '');
-        }
-      },
-      [config.brandingPath]: {
-        target: config.infinityUrl,
+      [config.branding_path]: {
+        target: config.infinity_url,
         changeOrigin: true,
-        secure: false
+        secure: false,
       },
       '/api': {
-        target: config.infinityUrl,
+        target: config.infinity_url,
         changeOrigin: true,
         secure: false
       },
     }
   },
   plugins: [
-    mkcert()
+    mkcert(),
+    overrideConfigPlugin()
   ]
 })
