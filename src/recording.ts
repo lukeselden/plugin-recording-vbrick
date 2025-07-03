@@ -7,8 +7,8 @@ import { conferenceAlias } from './conferenceAlias'
 
 import { vcRecordingApi } from './vc-recording'
 import { rtmpRecordingApi } from './rtmp-recording'
-import { clearRecording, getRecording, setRecording, isRecording } from './vbrick/recordingState'
-import { RecordingApi } from './vbrick/contracts'
+import { clearRecording, getRecording, setRecording, isRecording, isFailedRecording } from './vbrick/recordingState'
+import { RecordingApi, type RecordingStatus } from './vbrick/contracts'
 
 let participants: InfinityParticipant[] = []
 
@@ -103,19 +103,36 @@ const startRecording = async (): Promise<void> => {
 }
 
 const stopRecording = async (): Promise<void> => {
-  const plugin = getPlugin()
-
   const recording = getRecording();
   const stopResult = recording 
     ? await recordingApi.stopRecording(recording)
     : undefined;
 
-  if (stopResult?.success) {
+  if (stopResult?.success || !isAnotherRecordingActive()) {
     clearRecording();
     emitter.emit('changed')
     await plugin.ui.showToast({ message: 'Recording stopped' })
   } else {
     await plugin.ui.showToast({ message: 'Cannot stop the recording' })
+  }
+}
+
+const getStatus = async (): Promise<void> => {
+  const recording = getRecording();
+  const statusResult = recording 
+    ? await recordingApi.getStatus(recording)
+    : undefined;
+
+  if (recording && statusResult?.success) {
+    const {status, videoId = recording.videoId} = statusResult.data;
+    if (status !== recording.status || videoId !== recording.videoId) {
+      Object.assign(recording, { status, videoId });
+      console.log('Recording status', { status, videoId });
+      emitter.emit('changed');
+    }
+    if (isFailedRecording()) {
+      await plugin.ui.showToast({ message: 'Recording failed' })
+    }
   }
 }
 
@@ -139,6 +156,7 @@ export const Recording = {
   init,
   startRecording,
   stopRecording,
+  getStatus,
   isRecording,
   emitter
 }

@@ -1,9 +1,9 @@
 import { config } from './config'
 import { Auth } from './auth'
 import { ApiResult, makeApiRequest } from './vbrick/request'
-import { Recording, RecordingApi, VideoStatus } from './vbrick/contracts'
+import { Recording, RecordingApi, VideoStatus, type RecordingStatus } from './vbrick/contracts'
 import { InfinityParticipant } from '@pexip/plugin-api'
-import { getConferenceAlias } from './conferenceAlias'
+import { conferenceAlias } from './conferenceAlias'
 
 interface StartSipRecordingRequest {
   /** SIP address for the video recording. Normally the conference room SIP address. */
@@ -20,7 +20,6 @@ async function startRecording(title: string, timeoutSeconds = 60) {
   const path = '/api/v2/vc/start-recording'
   const url = new URL(path, config.vbrick.url)
 
-  const conferenceAlias = getConferenceAlias()
   const domain = config.infinity.sip_domain
   const sipAddress = `${conferenceAlias}@${domain}`
   const sipPin = ''
@@ -41,7 +40,7 @@ async function stopRecording({videoId}: Recording) {
   return response;
 }
 
-async function getStatus({videoId}: Recording): Promise<ApiResult<Pick<Recording, 'videoId' | 'status'>>> {
+async function getStatus({videoId}: Recording): Promise<ApiResult<RecordingStatus>> {
   const path = `/api/v2/vc/recording-status/${videoId}`
   const url = new URL(path, config.vbrick.url)
   const response = await makeApiRequest<VideoStatus>(url);

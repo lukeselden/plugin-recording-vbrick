@@ -53,9 +53,9 @@ export interface PluginConfig {
      */
     url: string;
     /**
-     * template name to be passed to RTMP Recorder API - used for setting video metadata
+     * route name to be passed to RTMP Recorder API - used for setting video metadata
      */
-    template?: string;
+    route?: string;
 
     /**
      * Optional display name to use for participants list

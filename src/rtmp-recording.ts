@@ -1,6 +1,6 @@
 import { config } from './config'
 import { InfinityParticipant, Participant } from '@pexip/plugin-api'
-import { getPlugin } from './plugin'
+import { plugin } from './plugin'
 import { ApiResult, makeApiRequest, timeoutAfter } from './vbrick/request'
 import { Recording, RecordingApi } from './vbrick/contracts'
 
@@ -10,8 +10,8 @@ import { Recording, RecordingApi } from './vbrick/contracts'
 export interface RTMPRecordingRequest {
   /** Name given to the video. Defaults to the current date if not provided. */
   title?: string;
-  /** template metadata settings - set in config file */
-  template?: string;
+  /** route configured in onprem recorder for setting metadata settings - set in config file */
+  route?: string;
 
   /** Description - safe html will be preserved */
   description?: string;
@@ -32,7 +32,6 @@ export interface RTMPRecordingRequest {
   videoAccessControl?: "AllUsers" | "Public" | "Private";
 }
 
-
 /**
  * Start RTMP recording and then dial out to the participant
  * @param title 
@@ -44,7 +43,7 @@ async function startRecording(title: string, timeoutSeconds = 60): Promise<ApiRe
   const url = new URL(path, config.recorder.url);
 
   // first make request to RTMP recorder for the correct RTMP url
-  const body: RTMPRecordingRequest = { title, template: config.recorder.template };
+  const body: RTMPRecordingRequest = { title, route: config.recorder.route };
   const response = await makeApiRequest(url, body, { method: 'POST', timeoutSeconds });
 
   if (!response.success) {
@@ -66,8 +65,6 @@ async function startRecording(title: string, timeoutSeconds = 60): Promise<ApiRe
 }
 
 async function dialOutParticipant(rtmpUrl: string) {
-  const plugin = getPlugin();
-
   await plugin.conference.dialOut({
     destination: rtmpUrl,
     // use 'auto' (call routing rules) unless flag is set in the config
@@ -85,7 +82,7 @@ async function stopRecording({rtmpStreamKey}: Recording): Promise<ApiResult<void
   // ignore request if no active recording
   if (!rtmpStreamKey) return { success: true, data: undefined };
 
-  const path = '/api/v2/vc/stop-recording'
+  const path = '/recapi/v0/rtmp/stop-recording'
   const url = new URL(path, config.recorder.url);
   const body = { rtmpStreamKey }
 

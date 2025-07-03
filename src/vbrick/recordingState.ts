@@ -24,3 +24,8 @@ export const isRecording = (): boolean => {
     ? !!recording?.rtmpStreamKey
     : !!recording?.videoId;
 }
+
+export const isFailedRecording = (): boolean => {
+  return isRecording() && recording?.status === "ConnectingFailed"
+    || recording?.status === "RecordingFailed";
+}
