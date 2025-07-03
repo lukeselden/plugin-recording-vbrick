@@ -1,5 +1,0 @@
-export const vbrickIcon = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#4D6EB0" d="m5.8 17.6 10.3-5.5L5.8 6.6z"/><path fill="#67C0ED" d="m4.1 1.6-.2-.1C3.1 1.1 2 1.7 2 2.7v18.9c0 1 1 1.6 1.9 1.1l.2-.1v-21zM5.7 2.5v2l14.2 7.6-14.2 7.6v2.1l15.9-8.5c.9-.5.9-1.8 0-2.3L5.7 2.5z"/></svg>');
-
-export const vbrickIdleIcon = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#ffffff" d="m5.8 17.6 10.3-5.5L5.8 6.6z"/><path fill="#ffffff" d="m4.1 1.6-.2-.1C3.1 1.1 2 1.7 2 2.7v18.9c0 1 1 1.6 1.9 1.1l.2-.1v-21zM5.7 2.5v2l14.2 7.6-14.2 7.6v2.1l15.9-8.5c.9-.5.9-1.8 0-2.3L5.7 2.5z"/></svg>');
-
-export const vbrickRecordingIcon = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#4D6EB0" d="m5.8 17.6 10.3-5.5L5.8 6.6z"/><path fill="#67C0ED" d="m4.1 1.6-.2-.1C3.1 1.1 2 1.7 2 2.7v18.9c0 1 1 1.6 1.9 1.1l.2-.1v-21zM5.7 2.5v2l14.2 7.6-14.2 7.6v2.1l15.9-8.5c.9-.5.9-1.8 0-2.3L5.7 2.5z"/><circle cx="20" cy="4" r="4" fill="red"></circle></svg>');

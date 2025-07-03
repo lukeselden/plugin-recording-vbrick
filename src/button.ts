@@ -89,7 +89,7 @@ const getGroup = async (): Promise<GroupButtonPayload[]> => {
       roles: ['chair'],
       opensPopup: {
         id: videosPopUpId,
-        openParams: [config.vbrick.url + '/#/media/uploads', '', popUpOpts]
+        openParams: [config.vbrick.url + '/#/media/uploads?sortField=whenUploaded', '', popUpOpts]
       }
     },
     {
