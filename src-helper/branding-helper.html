@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <style>
+            body {
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    'Segoe UI',
+                    Roboto,
+                    Oxygen,
+                    Ubuntu,
+                    Cantarell,
+                    'Open Sans',
+                    'Helvetica Neue',
+                    sans-serif;
+            }
+            label {
+                display: grid;
+                grid-template-columns: 12em 1fr;
+            }
+            fieldset {
+                display: grid;
+                gap: 1ex;
+            }
+            legend {
+                font-weight: bolder;
+            }
+            label strong {
+                font-weight: 500;
+            }
+            label input[type="checkbox"] {
+                justify-self: start;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                justify-items: start;
+                border: none;
+                padding: 1ex 0;
+            }
+            #download_link {
+                background: #efefef;
+                background: buttonface;
+                color: buttontext;
+                text-decoration: none;
+                cursor: pointer;
+                box-sizing: border-box;
+                padding: 4px 6px;
+                border: 1px outset buttonborder;
+                border-radius: 2px;
+            }
+            #download_link:not([href]) {
+                display: none;
+            }
+            #config_form.is-rtmp #sip_settings {
+                display: none;
+            }
+            #config_form:not(.is-rtmp) #rtmp_settings {
+                display: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <form id="config_form">
+            <fieldset>
+                <legend>Branding</legend>
+                <label for="branding">
+                    <strong>Branding ZIP File</strong>
+                    <input type="file" id="branding" name="branding" accept=".zip" />
+                </label>
+            </fieldset>
+            <fieldset>
+                <legend>Infinity</legend>
+                <label for="pexip_url">
+                    <strong>Infinity URL</strong>
+                    <input
+                        type="url"
+                        id="pexip_url"
+                        name="pexip_url"
+                        required
+                    />
+                </label>
+                <label for="branding_path">
+                    <strong>Branding Path</strong>
+                    <input
+                        type="text"
+                        id="branding_path"
+                        name="branding_path"
+                        required
+                    />
+                </label>
+                <!-- <label for="update_version">
+                    <strong>Update manifest version</strong>
+                    <input
+                        type="checkbox"
+                        id="update_version"
+                        name="update_version"
+                    />
+                </label> -->
+            </fieldset>
+            <fieldset>
+                <legend>Vbrick</legend>
+                <label for="vbrick_url">
+                    <strong>Vbrick Rev URL</strong>
+                    <input
+                        type="url"
+                        id="vbrick_url"
+                        name="vbrick_url"
+                        required
+                    />
+                </label>
+                <label for="client_id">
+                    <strong>OAuth Client ID</strong>
+                    <input
+                        type="text"
+                        id="client_id"
+                        name="client_id"
+                        required
+                    />
+                </label>
+                <label for="redirect_uri">
+                    <strong>OAuth redirect uri</strong>
+                    <input
+                        type="text"
+                        id="redirect_uri"
+                        name="redirect_uri"
+                        placeholder="calculated from Infinity URL"
+                        readonly
+                    />
+                </label>
+            </fieldset>
+            <fieldset>
+                <label for="recording_type">
+                    <strong>Recording Type</strong>
+                    <select id="recording_type" name="recording_type">
+                        <option value="sip" selected>SIP</option>
+                        <option value="rtmp">RTMP</option>
+                    </select>
+                </label>
+            </fieldset>
+            <fieldset id="sip_settings">
+                <label for="sip_domain">
+                    <strong>Pexip sip domain</strong>
+                    <input
+                        type="text"
+                        id="sip_domain"
+                        name="sip_domain"
+                        placeholder="leave blank if same as Infinity URL"
+                    />
+                </label>
+            </fieldset>
+            <fieldset id="rtmp_settings">
+                <legend>RTMP Recording</legend>
+                <label for="recorder_url">
+                    <strong>On-prem Recorder URL</strong>
+                    <input
+                        type="url"
+                        id="recorder_url"
+                        name="recorder_url"
+                        placeholder="https://rtmp.recorder.url"
+                    />
+                </label>
+                <label for="recorder_route">
+                    <strong>Route</strong>
+                    <input
+                        type="text"
+                        id="recorder_route"
+                        name="recorder_route"
+                        value="vmr"
+                    />
+                </label>
+                <label for="display_name">
+                    <strong>Display Name</strong>
+                    <input
+                        type="text"
+                        id="display_name"
+                        name="display_name"
+                        value="Vbrick Recorder"
+                    />
+                </label>
+                <label for="legacy_dialout_api">
+                    <strong>Use Legacy DialOut API?</strong>
+                    <select
+                        id="legacy_dialout_api"
+                        name="legacy_dialout_api"
+                    >
+                        <option value="" selected>No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </label>
+            </fieldset>
+            <fieldset class="grid">
+                <button type="reset">Reset Form</button>
+                <button type="submit">Create Plugin ZIP</button>
+                <a id="download_link" target="_blank" download="plugin.zip">Download plugin.zip</a>
+            </fieldset>
+        </form>
+        
+        <script type="module" src="./main.ts"></script>
+    </body>
+</html>
