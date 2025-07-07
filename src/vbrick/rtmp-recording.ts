@@ -1,8 +1,8 @@
-import { config } from './config'
-import { InfinityParticipant, Participant } from '@pexip/plugin-api'
-import { plugin } from './plugin'
-import { ApiResult, makeApiRequest, timeoutAfter } from './vbrick/request'
-import { Recording, RecordingApi } from './vbrick/contracts'
+import type { InfinityParticipant, Participant } from '@pexip/plugin-api'
+import { config } from '../config'
+import { plugin } from '../plugin'
+import type { Recording, RecordingApi, RecordingStatus } from './contracts'
+import { makeApiRequest, timeoutAfter, type ApiResult } from './request'
 
 /**
  * @see {@link https://revdocs.vbrick.com/reference/uploadvideo-1} For a full list of additional metadata that can be sent
@@ -38,13 +38,13 @@ export interface RTMPRecordingRequest {
  * @param timeoutSeconds 
  * @returns 
  */
-async function startRecording(title: string, timeoutSeconds = 60): Promise<ApiResult<{ rtmpUrl: string; rtmpStreamKey: string; participant?: Participant }>> {
+async function startRecording(title: string, timeoutSeconds = 60): Promise<ApiResult<Partial<Recording> & { participant?: Participant }>> {
   const path = '/recapi/v0/rtmp/start-recording'
   const url = new URL(path, config.recorder.url);
 
   // first make request to RTMP recorder for the correct RTMP url
   const body: RTMPRecordingRequest = { title, route: config.recorder.route };
-  const response = await makeApiRequest(url, body, { method: 'POST', timeoutSeconds });
+  const response = await makeApiRequest<Record<string, string>>(url, body, { method: 'POST', timeoutSeconds });
 
   if (!response.success) {
     return response;
@@ -52,26 +52,30 @@ async function startRecording(title: string, timeoutSeconds = 60): Promise<ApiRe
 
   // then trigger pexip to start sending to that RTMP url
   try {
-    const participant = await timeoutAfter(dialOutParticipant(response.data.rtmpUrl), timeoutSeconds);
-    response.data.participant = participant;
-    return response;
+    return {
+      success: true,
+      data: {
+        ...response.data,
+        participant: await timeoutAfter(dialOutParticipant(response.data.rtmpUrl), timeoutSeconds)
+      }
+    }
   } catch (error) {
     return {
       ...response,
       success: false,
-      error: `${error}`
+      error: String(error)
     }
   }
 }
 
-async function dialOutParticipant(rtmpUrl: string) {
-  await plugin.conference.dialOut({
+async function dialOutParticipant(rtmpUrl: string): Promise<Participant> {
+  return await plugin.conference.dialOut({
     destination: rtmpUrl,
     // use 'auto' (call routing rules) unless flag is set in the config
-    protocol: config.recorder.legacy_dialout_api ? 'rtmp' : 'auto',
+    protocol: config.recorder.legacy_dialout_api === true ? 'rtmp' : 'auto',
     role: 'GUEST',
     streaming: 'yes',
-    ...config.recorder.display_name && {
+    ...(config.recorder.display_name != null) && {
       text: config.recorder.display_name
     }
   });
@@ -80,20 +84,20 @@ async function dialOutParticipant(rtmpUrl: string) {
 
 async function stopRecording({rtmpStreamKey}: Recording): Promise<ApiResult<void>> {
   // ignore request if no active recording
-  if (!rtmpStreamKey) return { success: true, data: undefined };
+  if (rtmpStreamKey == null || rtmpStreamKey === '') return { success: true, data: undefined };
 
   const path = '/recapi/v0/rtmp/stop-recording'
   const url = new URL(path, config.recorder.url);
   const body = { rtmpStreamKey }
 
-  const response = await makeApiRequest<void>(url, body, { method: 'POST' })
+  const response = await makeApiRequest(url, body, { method: 'POST' })
   return response;
 }
 
-async function getStatus({rtmpStreamKey}: Recording) {
+async function getStatus({rtmpStreamKey}: Recording): Promise<ApiResult<RecordingStatus>> {
   const path = `/recapi/v0/rtmp/recording-status/${rtmpStreamKey}`
   const url = new URL(path, config.recorder.url);
-  const response = await makeApiRequest<Partial<Recording>>(url);
+  const response = await makeApiRequest(url);
   return response;
 }
 

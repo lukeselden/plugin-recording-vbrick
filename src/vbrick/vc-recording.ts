@@ -1,9 +1,9 @@
-import { config } from './config'
-import { Auth } from './auth'
-import { ApiResult, makeApiRequest } from './vbrick/request'
-import { Recording, RecordingApi, VideoStatus, type RecordingStatus } from './vbrick/contracts'
-import { InfinityParticipant } from '@pexip/plugin-api'
-import { conferenceAlias } from './conferenceAlias'
+import type { InfinityParticipant } from '@pexip/plugin-api'
+import { Auth } from '../auth'
+import { conferenceAlias } from '../conferenceAlias'
+import { config } from '../config'
+import type { Recording, RecordingApi, RecordingStatus, VideoStatus } from './contracts'
+import { makeApiRequest, type ApiResult } from './request'
 
 interface StartSipRecordingRequest {
   /** SIP address for the video recording. Normally the conference room SIP address. */
@@ -16,7 +16,7 @@ interface StartSipRecordingRequest {
   audioOnly?: boolean
 }
 
-async function startRecording(title: string, timeoutSeconds = 60) {
+async function startRecording(title: string, timeoutSeconds = 60): Promise<ApiResult<{ videoId: string }>> {
   const path = '/api/v2/vc/start-recording'
   const url = new URL(path, config.vbrick.url)
 
@@ -31,12 +31,12 @@ async function startRecording(title: string, timeoutSeconds = 60) {
 }
 
 
-async function stopRecording({videoId}: Recording) {
+async function stopRecording({videoId}: Recording): Promise<ApiResult<void>> {
   const path = '/api/v2/vc/stop-recording'
   const url = new URL(path, config.vbrick.url)
 
   const body = { videoId }
-  const response = await makeApiRequest<void>(url, body, { method: 'POST' });
+  const response = await makeApiRequest(url, body, { method: 'POST' });
   return response;
 }
 
@@ -59,7 +59,7 @@ async function getStatus({videoId}: Recording): Promise<ApiResult<RecordingStatu
 }
 
 export const isRecordingParticipant = (participant: InfinityParticipant): boolean => {
-  const domain = new URL(config.vbrick.url as string).hostname
+  const domain = new URL(config.vbrick.url).hostname
   const recordingUri = `sip:${Auth.getUser()?.username}@${domain}`
 
   return participant.uri === recordingUri

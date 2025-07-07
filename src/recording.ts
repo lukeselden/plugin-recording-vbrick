@@ -5,10 +5,10 @@ import type { InfinityParticipant } from '@pexip/plugin-api'
 import { plugin } from './plugin'
 import { conferenceAlias } from './conferenceAlias'
 
-import { vcRecordingApi } from './vc-recording'
-import { rtmpRecordingApi } from './rtmp-recording'
 import { clearRecording, getRecording, setRecording, isRecording, isFailedRecording } from './vbrick/recordingState'
 import { RecordingApi, type RecordingStatus } from './vbrick/contracts'
+import { rtmpRecordingApi } from './vbrick/rtmp-recording'
+import { vcRecordingApi } from './vbrick/vc-recording'
 
 let participants: InfinityParticipant[] = []
 
