@@ -41,6 +41,43 @@ When the user click on the recording button, the recording will start:
 
 </div>
 
+
+## Vbrick Configuration
+
+### API Key
+
+You must add an OAuth API Key This plugin uses an OAuth login flow to authenticate with Vbrick. Follow the steps outlined in the Vbrick documentation to [Create an API Key](https://revdocs.vbrick.com/docs/create-an-api-key):
+
+1. Open Vbrick webpage. This is the same that you have to define in the url.
+2. Go to `ADMIN > System Settings > API Keys`.
+3. Click on `+ Add Key`.
+4. Introduce the following parameters:
+
+   - **name:** It's only a label to identify the key.
+   - **key:** It's the value that we will use as `client_id` in the configuration.
+   - **authorized redirect uris:** This is the `redirect_uri` in the configuration and should be in the following **exact** format, replacing `<pexip-domain>` with the URL of your Pexip deployment and `<branding-path>` with the [web app path](https://docs.pexip.com/admin/branding_paths.htm) where this plugin will be included.
+
+     `https://<pexip-domain>/<branding-path>/oauth-redirect`
+5. Click on `Create`.
+
+## Pexip Infinity Configuration
+
+In order to use this plugin for recording our Pexip deployment should comply with the following requirements:
+
+### SIP Recording
+
+1. All the VMRs to record should contain a **SIP alias**. For example, if we
+   have a VMR with alias `meet` in pexipdemo.com. We should also have another
+   with the following format `meet@pexipdemo.com`.
+2. You will need to configure the call routing to accept **SIP incoming**
+   INVITES. Go to the Pexip Management node and create a new call routing
+   (Services > Call Routing).
+
+### RTMP Recording
+
+1. You will need to configure the call routing to allow **RTMP Outgoing** calls. The Destination alias match should be a regex matching the the RTMP Recorder's domain
+
+
 ## Plugin Configuration
 
 ### Option 1. Use configuration tool
@@ -128,38 +165,6 @@ To add the plugin to a a branding package:
     ]
   ```
   4. Ensure that `"handleOauthRedirects"` is set to `true`
-
-## Vbrick Configuration
-
-#### API Key
-
-You must add an OAuth API Key This plugin uses an OAuth login flow to authenticate with Vbrick. Follow the steps outlined in the Vbrick documentation to [Create an API Key](https://revdocs.vbrick.com/docs/create-an-api-key):
-
-1. Open Vbrick webpage. This is the same that you have to define in the url.
-2. Go to `ADMIN > System Settings > API Keys`.
-3. Click on `+ Add Key`.
-4. Introduce the following parameters:
-
-   - **name:** It's only a label to identify the key.
-   - **key:** It's the value that we will use as `client_id` in the configuration.
-   - **authorized redirect uris:** This is the `redirect_uri` in the configuration and should be in the following format, replacing `<pexip-domain>` with the URL of your Pexip deployment and `<branding-path>` with the [web app path](https://docs.pexip.com/admin/branding_paths.htm) where this plugin will be included.
-
-     `https://<pexip-domain>/<branding-path>/oauth-redirect`
-
-
-5. Click on `Create`.
-
-## Pexip Infinity Configuration
-
-In order to use this plugin for SIP conference recording our Pexip deployment should comply with the following requirements:
-
-1. All the VMRs to record should contain a **SIP alias**. For example, if we
-   have a VMR with alias `meet` in pexipdemo.com. We should also have another
-   with the following format `meet@pexipdemo.com`.
-2. You will need to configure the call routing to accept **SIP incoming**
-   INVITES. Go to the Pexip Management node and create a new call routing
-   (Services > Call Routing).
-
 
 ## Development
 
