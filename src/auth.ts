@@ -1,39 +1,12 @@
 import EventEmitter from 'eventemitter3'
 import { config } from './config'
-import { clearLocalStorage, getLocalStorage, LocalStorageKey, setLocalStorage } from './LocalStorageKey'
-
-let user: User | null;
-function loadUser() {
-  user = getLocalStorage(LocalStorageKey.User);
-}
-loadUser();
-function saveUser(value?: User | null) {
-  user = value || null;
-  if (user) {
-    setLocalStorage(LocalStorageKey.User, user);
-  } else {
-    clearLocalStorage(LocalStorageKey.User);
-  }
-}
+import { user, setUser, type User } from './user'
 
 let codeVerifier: string
 
 const marginInterval = 20
 const defaultExpiresIn = 1800
 let intervalRefreshToken: number = 0
-
-interface User {
-  userId: string
-  username: string
-  firstName: string
-  lastName: string
-  scope: string
-  access_token: string
-  refresh_token: string
-  token_type: string
-  expires_in: number
-  expiration: Date
-}
 
 const getAuthUrl = async (): Promise<string> => {
   const authPath = '/api/v2/oauth2/authorize'
@@ -67,7 +40,7 @@ const createAccessToken = async (code: string): Promise<void> => {
 
   const data: User = await response.json()
   data.expiration = new Date(Date.now() + data.expires_in * 1000);
-  saveUser(data);
+  setUser(data);
 
   if (intervalRefreshToken === 0) {
     startRefreshTokenInterval(
@@ -87,7 +60,7 @@ const getUser = (): User | null => {
 }
 
 const isAuthenticated = (): boolean => {
-  return !!user?.access_token
+  return user != null && user.access_token !== ''
 }
 
 const getAuthHeader = (): Record<string, string> => {
@@ -95,7 +68,7 @@ const getAuthHeader = (): Record<string, string> => {
 }
 
 const refreshAccessToken = async (): Promise<void> => {
-  if (!isAuthenticated()) {
+  if (user == null || !isAuthenticated()) {
     throw new Error('Cannot recover the user info from the localStorage')
   }
 
@@ -107,10 +80,10 @@ const refreshAccessToken = async (): Promise<void> => {
     headers: getAuthHeader()
   });
 
-  const {expiration} = await response.json()
+  const {expiration} = await response.json() as Record<string, string>
   const expireDelta = new Date(expiration).getTime() - Date.now();
-  user!.expires_in = Math.floor(expireDelta / 1000);
-  saveUser(user);
+  user.expires_in = Math.floor(expireDelta / 1000);
+  setUser(user);
 
   if (intervalRefreshToken === 0) {
     startRefreshTokenInterval(
@@ -127,7 +100,7 @@ const isSessionValid = async (): Promise<boolean> => {
   if (!isAuthenticated()) return false;
   const response = await fetch(url, {
     headers: getAuthHeader()
-  }).catch(e => console.error(e));
+  }).catch(e => { console.error(e) });
 
   return response?.status === 200;
 }
@@ -136,17 +109,17 @@ const logout = async (): Promise<void> => {
   // Send the request to logoff endpoint
   const path = '/api/v2/user/logoff'
   const url = new URL(path, config.vbrick.url)
-  if (isAuthenticated()) {
+  if (user != null && isAuthenticated()) {
     await fetch(url, {
       method: 'POST',
       body: JSON.stringify({
-        userId: user!.userId
+        userId: user.userId
       }),
       headers: {
         ...getAuthHeader(),
         'Content-Type': 'application/json'
       }
-    }).catch(e => console.warn(e));
+    }).catch(e => { console.warn(e) });
   }
   cleanSession()
   stopRefreshInterval()
@@ -154,7 +127,7 @@ const logout = async (): Promise<void> => {
 }
 
 const cleanSession = (): void => {
-  saveUser(null);
+  setUser(null);
 }
 
 const startRefreshTokenInterval = (interval: number): void => {

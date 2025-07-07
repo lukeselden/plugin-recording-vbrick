@@ -1,5 +1,5 @@
 import type { Recording } from './contracts'
-import { clearLocalStorage, getLocalStorage, LocalStorageKey, setLocalStorage } from '../LocalStorageKey'
+import { getLocalStorage, LocalStorageKey, setLocalStorage } from '../storage'
 import { config } from '../config'
 
 let recording: Recording | null = getLocalStorage(LocalStorageKey.Recording)
@@ -13,16 +13,17 @@ export const getRecording = (): Recording | null => {
   return recording
 }
 
-export const clearRecording = () => {
+export const clearRecording = (): void => {
   recording = null;
-  clearLocalStorage(LocalStorageKey.Recording);
+  setLocalStorage(LocalStorageKey.Recording, null);
 }
 
 export const isRecording = (): boolean => {
-  const isRtmp = config.recording_type === 'rtmp';
-  return isRtmp
-    ? !!recording?.rtmpStreamKey
-    : !!recording?.videoId;
+  const key = config.recording_type === 'rtmp'
+    ? recording?.rtmpStreamKey
+    : recording?.videoId;
+
+  return key != null && key !== '';
 }
 
 export const isFailedRecording = (): boolean => {
