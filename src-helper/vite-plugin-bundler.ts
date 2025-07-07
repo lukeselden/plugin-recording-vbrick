@@ -2,30 +2,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type {Plugin} from 'vite';
-
-async function getFiles(directory: string, omit: string[] = []) {
-  const assets: Record<string, Uint8Array> = {};
-  const files = await fs.readdir(directory, {
-      withFileTypes: true,
-      recursive: true
-  });
-  for (let file of files) {
-    if (!file.isFile()) continue;
-    const dir = path.relative(directory, file.parentPath);
-    // make sure unix paths
-    const zipPath = pathJoin(dir, file.name);
-
-    if (omit.includes(zipPath)) {
-      console.log(`Skipping omitted file ${omit}`);
-    }
-
-    const sourcePath = path.join(directory, dir, file.name);
-    const content = await fs.readFile(sourcePath);
-    // result[zipPath] = content.toString('base64');
-    assets[zipPath] = content.toString('base64');
-  }
-  return assets;
-}
 import { encodeArtifacts, pathJoin } from './artifact-utils.js'
 import type { Artifacts } from './virtual-bundle.js'
 
@@ -67,3 +43,30 @@ async function generateVirtualBundle({artifactsFolder, main, pluginDirectory, om
   return `export default ${JSON.stringify(payload)};`
 }
 
+
+async function getFiles(directory: string, omit: string[] = []): Promise<Record<string, string>> {
+  const assets: Record<string, string> = {};
+  const files = await fs.readdir(directory, {
+      withFileTypes: true,
+      recursive: true
+  });
+  for (const file of files) {
+    if (!file.isFile()) continue;
+    const dir = path.relative(directory, file.parentPath);
+    // make sure unix paths
+    const zipPath = pathJoin(dir, file.name);
+
+    if (omit.includes(zipPath)) {
+      console.log(`Skipping omitted file ${file.name}`);
+      continue;
+    }
+
+    console.debug(`Including ${file.name} in plugin bundle`)
+
+    const sourcePath = path.join(directory, dir, file.name);
+    const content = await fs.readFile(sourcePath);
+    // result[zipPath] = content.toString('base64');
+    assets[zipPath] = content.toString('base64');
+  }
+  return assets;
+}
