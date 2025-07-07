@@ -1,24 +1,24 @@
-// @ts-check
-import fs from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+/* eslint-disable @typescript-eslint/strict-boolean-expressions */
 import { defineConfig } from 'vite'
 import mkcert from 'vite-plugin-mkcert'
 
-const devConfig = JSON.parse(await fs.readFile('./vite.json', 'utf-8').catch(() => 'null'));
+const devConfig = await import('./vite.json', { with: { type: 'json' }}).catch(() => null);
 
 if (devConfig) {
   console.log('Overriding config with values in ./vite.json');
 }
 
-const config = {
+export const config = {
   port: 5173,
   main: "index.html",
   outDir: "dist",
-  branding_path: "local-plugin",
   pluginName: "vbrick",
+  infinity_url: '',
+  branding_path: "local-plugin",
+  recording_type: 'sip',
   ...devConfig
 };
+
 
 if (!config.infinity_url || config.infinity_url === "https://pexip.example.com") {
   console.warn(`No infinity_url set in config files, using infinity.sip_domain (${config.infinity?.sip_domain})`);
@@ -99,41 +99,43 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const outDir = resolve(__dirname, config.outDir);
 const main = resolve(__dirname, config.main);
 
-
-export default defineConfig({
-  base: './',
-  build: {
-    target: 'esnext',
-    outDir,
-    rollupOptions: {
-      input: {
-        main
-      },
-      output: {
-        entryFileNames: 'assets/[name].js'
+export default defineConfig(({ command, mode }) => {
+  return {
+    base: './',
+    build: {
+      target: 'esnext',
+      outDir: 'dist',
+      rollupOptions: {
+        input: {
+          main: 'index.html'
+        },
+        output: {
+          entryFileNames: 'assets/[name].js'
+        }
       }
-    }
-  },
-  server: {
-    https: true,
-    port: config.port,
-    open: config.branding_path + '/',
-    cors: true,
-    proxy: {
-      [config.branding_path]: {
-        target: config.infinity_url,
-        changeOrigin: true,
-        secure: false,
-      },
-      '/api': {
-        target: config.infinity_url,
-        changeOrigin: true,
-        secure: false
-      },
-    }
-  },
-  plugins: [
-    mkcert(),
-    overrideConfigPlugin()
-  ]
-})
+    },
+    server: {
+      https: {},
+      port: config.port,
+      open: config.branding_path + '/',
+      cors: true,
+      proxy: {
+        [config.branding_path]: {
+          target: config.infinity_url,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/api': {
+          target: config.infinity_url,
+          changeOrigin: true,
+          secure: false
+        },
+      }
+    },
+    plugins: [
+      mkcert(),
+      overrideConfigPlugin()
+    ]
+  };
+});
+
