@@ -2,7 +2,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type {Plugin} from 'vite';
-import { encodeArtifacts, pathJoin, type Artifacts } from './artifact-utils.js'
 
 async function getFiles(directory: string, omit: string[] = []) {
   const assets: Record<string, Uint8Array> = {};
@@ -27,6 +26,8 @@ async function getFiles(directory: string, omit: string[] = []) {
   }
   return assets;
 }
+import { encodeArtifacts, pathJoin } from './artifact-utils.js'
+import type { Artifacts } from './virtual-bundle.js'
 
 export interface InlinePluginOptions {
   artifactsFolder: string;
@@ -36,7 +37,13 @@ export interface InlinePluginOptions {
   defaults?: Artifacts['defaults']
 }
 
-export default function inlineAssetsPlugin(virtualId: string, {artifactsFolder, main, pluginDirectory, omit, defaults}: InlinePluginOptions): Plugin {
+/**
+ * This plugin is used to automatically take anything in the dist folder and include it as text for the branding helper page
+ * @param virtualId 
+ * @param options 
+ * @returns 
+ */
+export default function inlineAssetsPlugin(virtualId: string, options: InlinePluginOptions): Plugin {
   const resolvedId = `\0${virtualId}`;
   let cached = '';
   return {
@@ -47,13 +54,16 @@ export default function inlineAssetsPlugin(virtualId: string, {artifactsFolder, 
     },
     async load(id) {
       if (id !== resolvedId) return;
-      if (!cached) {
-        console.log(`inlining plugin assets from ${artifactsFolder}`);
-        const assets = await getFiles(artifactsFolder, omit);
-        const payload = encodeArtifacts({ main, assets, folder: pluginDirectory, defaults });
-        cached = `export default ${JSON.stringify(payload)};`
-      }
+      cached ||= await generateVirtualBundle(options)
       return cached;
     }
   }
 }
+
+async function generateVirtualBundle({artifactsFolder, main, pluginDirectory, omit, defaults}: InlinePluginOptions): Promise<string> {
+  console.log(`\nInlining plugin assets from ${artifactsFolder}`);
+  const assets = await getFiles(artifactsFolder, omit);
+  const payload = encodeArtifacts({ main, assets, folder: pluginDirectory, defaults });
+  return `export default ${JSON.stringify(payload)};`
+}
+

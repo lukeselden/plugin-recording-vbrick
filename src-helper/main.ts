@@ -1,14 +1,14 @@
-import type { PluginConfig } from '../src/config.js'
-import type { Artifacts } from './artifact-utils.js'
+import type { PluginConfig, RecordingType } from '../src/config.js'
 import {generatePackage, getConfigFromBrandingZip} from './packager.js';
+import type { Artifacts } from './virtual-bundle.js'
 import artifacts from './vite-bundled-artifacts.js'
 
-const $ = <T = HTMLInputElement>(sel: string) => document.querySelector(sel) as T
-function listen<E extends Event>(sel: string, evt: string, cb: (event: E) => any) {
+const $ = <T = HTMLInputElement>(sel: string): T => document.querySelector(sel) as T
+function listen<K extends keyof HTMLElementEventMap>(sel: string, evt: K, cb: (event: HTMLElementEventMap[K]) => any): void {
   const el = $(sel)
-  el?.addEventListener(evt, cb as any)
+  el?.addEventListener(evt, cb)
 }
-listen('#recording_type', 'change', (event: InputEvent) => {
+listen('#recording_type', 'change', (event) => {
   const el = event.target as HTMLInputElement;
   const isRTMP = el.value === 'rtmp'
   $('#config_form').classList.toggle('is-rtmp', isRTMP)
@@ -23,7 +23,7 @@ listen('#pexip_url', 'input', (event) => {
 listen('#branding_path', 'input', (event) => {
   updateOAuth()
 })
-function updateOAuth() {
+function updateOAuth(): void {
   const { value: baseUrl } = $('#pexip_url')
   const { value: path = 'webapp3' } = $('#branding_path')
   if (URL.canParse(baseUrl)) {
@@ -34,13 +34,13 @@ function updateOAuth() {
 }
 listen('#branding', 'change', (event) => {
   const file = $<HTMLInputElement>('#branding').files?.[0];
-  if (!file) return;
+  if (file == null) return;
   getConfigFromBrandingZip(file)
     .then(config => {
-      if (!config) return;
+      if (config == null) return;
       console.log('Updating config from branding', config);
       setDefaults(config);
-    }).catch(err => console.warn('error on getting config', err));
+    }).catch(err => { console.warn('error on getting config', err) });
 })
 listen('#config_form', 'submit', (event: SubmitEvent) => {
   event.preventDefault()
@@ -53,54 +53,41 @@ listen('#config_form', 'submit', (event: SubmitEvent) => {
       anchor.innerText = `Download ${file.name}`;
       anchor.download = file.name;
     })
+    .catch(err => { console.warn('error on generating config', err) });
 })
 
-function formToConfig() {
-  const fields = document.querySelectorAll(
-    '#config_form :is(input,select)'
-  ) as NodeListOf<HTMLInputElement | HTMLSelectElement>;
+function isBlank<T = unknown>(val: T): val is Exclude<T, NonNullable<T>> {
+  return val == null || val === '';
+}
+
+function formToConfig(): {config: PluginConfig, brandingZipFile: File} {
+  const fields: NodeListOf<HTMLInputElement | HTMLSelectElement> = document.querySelectorAll('#config_form :is(input,select)')
   const rawEntries = Array.from(fields).map((el) => [
     el.name,
-    el.type === 'file' && el.files
+    el.type === 'file' && el.files != null
       ? el.files[0]
       : el.value,
   ])
 
-  let {
-    branding: brandingZipFile,
-    branding_path: brandingPath,
-    update_version,
-    vbrick_url,
-    client_id,
-    redirect_uri,
-    pexip_url,
-    sip_domain,
-    recording_type,
-    recorder_url,
-    recorder_route,
-    display_name,
-    legacy_dialout_api,
-  } = Object.fromEntries(rawEntries)
+  const data: Record<string, string> = Object.fromEntries(rawEntries);
 
-  if (!sip_domain) {
-    sip_domain = new URL(pexip_url).hostname
-  }
+  data.sip_domain ||= new URL(data.pexip_url).hostname
 
   const config: PluginConfig = {
-    recording_type,
+    recording_type: data.recording_type as RecordingType,
     vbrick: {
-      url: vbrick_url,
-      client_id,
-      redirect_uri,
+      url: data.vbrick_url,
+      client_id: data.client_id,
+      redirect_uri: data.redirect_uri,
     },
     infinity: {
-      sip_domain,
+      sip_domain: data.sip_domain,
     },
     recorder: {
-      url: recorder_url,
-      route: recorder_route,
-      display_name,
-      legacy_dialout_api: /yes|true|checked/i.test(legacy_dialout_api),
+      url: data.recorder_url,
+      route: data.recorder_route,
+      display_name: data.display_name,
+      legacy_dialout_api: /yes|true|checked/i.test(data.legacy_dialout_api),
     }
   };
 
@@ -108,18 +95,18 @@ function formToConfig() {
 
   return {
     config,
-    brandingZipFile: brandingZipFile as File
+    brandingZipFile: data.branding as any as File
   }
 }
 
-function setDefaults(defaults: Artifacts['defaults'] = {}) {
-  const {redirect_uri = ''} = defaults.vbrick ?? {};
-  if (URL.canParse(redirect_uri)) {
-    const url = new URL(redirect_uri);
+function setDefaults(defaults: Artifacts['defaults'] = {}): void {
+  const {redirect_uri: redirectUri = ''} = defaults.vbrick ?? {};
+  if (URL.canParse(redirectUri)) {
+    const url = new URL(redirectUri);
     defaults.infinity_url ||= url.origin;
     defaults.branding_path ||= url.pathname.replace('/oauth-redirect', '').slice(1);
   }
-  const fields: ([id: string, type: string, val?: string])[] = [
+  const fields: Array<[id: string, type: string, val?: string]> = [
     ['pexip_url', 'input', defaults.infinity_url],
     ['recording_type', 'change', defaults.recording_type],
     ['branding_path', 'input', defaults.branding_path],
@@ -130,16 +117,16 @@ function setDefaults(defaults: Artifacts['defaults'] = {}) {
     ['recorder_route', 'change', defaults.recorder?.route],
     ['sip_domain', 'change', defaults.infinity?.sip_domain]
   ]
-  for (let [id, type, val] of fields) {
-    if (!val) continue;
+  for (const [id, type, val] of fields) {
+    if (isBlank(val)) continue;
     const el = $(`#${id}`);
-    if (!el.value || el instanceof HTMLSelectElement) {
+    if (isBlank(el.value) || el instanceof HTMLSelectElement) {
       el.value = val;
     }
     const event = new CustomEvent(type);
     el.dispatchEvent(event);
   }
 }
-if (artifacts.defaults) {
-  // setDefaults(artifacts.defaults);
+if (artifacts.defaults != null && typeof artifacts.defaults === 'object') {
+  setDefaults(artifacts.defaults);
 }

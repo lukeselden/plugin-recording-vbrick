@@ -25,7 +25,8 @@
 import {unzipSync, zipSync, strFromU8, strToU8, type Unzipped} from 'fflate';
 import type {PluginConfig} from '../src/config.js';
 import artifacts from './vite-bundled-artifacts.js';
-import { addArtifactsToZip, getEntryPoint, pathJoin, type Artifacts } from './artifact-utils.js'
+import { addArtifactsToZip, getEntryPoint, pathJoin } from './artifact-utils.js'
+import type { Artifacts } from './virtual-bundle.js'
 
 
 interface UpdateOptions {
@@ -38,39 +39,38 @@ interface Manifest {
   applicationConfig: {
     handleOauthRedirects: boolean
   }
-  plugins: ({ src: string, sandboxValues?: string[] })[]
+  plugins: Array<{ src: string, sandboxValues?: string[] }>
 }
 
 
+const BASE_BRANDING_FOLDER = 'webapp3/branding';
+// text to append when outputting a modified branding zip file
+const FILE_SUFFIX = '-vbrick';
 
-
-async function extractBrandingZip(file: File) {
-    if (!file) return {};
+async function extractBrandingZip(file: File): Promise<Unzipped> {
+    if (file == null) return {};
     const bytes = new Uint8Array(await file.arrayBuffer());
     const data = unzipSync(bytes);
     return data;
 }
 
-export async function getConfigFromBrandingZip(file: File) {
+export async function getConfigFromBrandingZip(file?: File): Promise<Artifacts['defaults'] | undefined> {
+  if (file == null) return undefined;
   const listing = await extractBrandingZip(file);
-  if (!file) return {};
-  const configPath = pathJoin('webapp3/branding', artifacts.folder, 'config.json');
+  const configPath = pathJoin(BASE_BRANDING_FOLDER, artifacts.folder, 'config.json');
   const configEntry = Object.entries(listing).find(([k, v]) => k.endsWith(configPath));
 
-  return configEntry
+  return configEntry != null
     ? JSON.parse(strFromU8(configEntry[1]))
     : undefined;
 }
 
-function getOutputFilename(file: File) {
-    const FILE_SUFFIX = '-vbrick';
+function getOutputFilename(file: File): string {
     return `${(file?.name ?? 'branding').replace(/\.zip$/i, FILE_SUFFIX)}.zip`
 }
 
-
-
-function updateManifest(branding: Unzipped, opts: UpdateOptions) {
-  let {manifest, manifestPath} = getManifest(branding);
+function updateManifest(branding: Unzipped, opts: UpdateOptions): void {
+  const {manifest, manifestPath} = getManifest(branding);
   
   // add plugin/update in list of plugins
   addPluginEntry(manifest, opts);
@@ -81,17 +81,18 @@ function updateManifest(branding: Unzipped, opts: UpdateOptions) {
     handleOauthRedirects: true
   };
   // increment version
-  if (opts.updateVersion) {
-    manifest.version = (manifest.version || 0) + 1;
+  if (opts.updateVersion === true) {
+    manifest.version = (manifest.version ?? 0) + 1;
   }
   // update data in branding zip
   branding[manifestPath] = strToU8(JSON.stringify(manifest));
 }
 
 
-function getManifest(listing: Record<string, Uint8Array>) {
-  const [manifestPath, bytes] = Object.entries(listing).find(([key]) => key.endsWith('manifest.json')) || ['', new Uint8Array()];
-  if (!(manifestPath && bytes?.length > 0)) {
+function getManifest(listing: Record<string, Uint8Array>): { manifestPath: string, manifest: Manifest} {
+  const [manifestPath, bytes] = Object.entries(listing)
+    .find(([key]) => key.endsWith('manifest.json')) ?? ['', new Uint8Array()];
+  if (manifestPath === '' || bytes.length === 0) {
     throw new Error('Invalid branding zip - no manifest.json found');
   }
   const manifest = JSON.parse(strFromU8(bytes));
@@ -101,7 +102,7 @@ function getManifest(listing: Record<string, Uint8Array>) {
   };
 }
 
-function addPluginEntry(manifest: Manifest, opts: UpdateOptions) {
+function addPluginEntry(manifest: Manifest, opts: UpdateOptions): void {
   const {
     sandboxValues = ['allow-same-origin', 'allow-popups', 'allow-forms']
   } = opts;
@@ -113,14 +114,14 @@ function addPluginEntry(manifest: Manifest, opts: UpdateOptions) {
 
   manifest.plugins ||= [];
   const existing = manifest.plugins.find(({ src }) => src.endsWith(pluginEntry.src));
-  if (existing) {
+  if (existing != null) {
     existing.sandboxValues = pluginEntry.sandboxValues;
   } else {
     manifest.plugins.push(pluginEntry);
   }
 }
 
-export async function generatePackage(file: File, config: PluginConfig) {
+export async function generatePackage(file: File, config: PluginConfig): Promise<File> {
   const opts: UpdateOptions = {};
     const branding = await extractBrandingZip(file);
 
@@ -137,7 +138,7 @@ export async function generatePackage(file: File, config: PluginConfig) {
     };
 
     // put plugin files into branding zip
-    addArtifactsToZip(branding, pluginContent, 'webapp3/branding');
+    addArtifactsToZip(branding, pluginContent, BASE_BRANDING_FOLDER);
     
     console.log('Plugin artifacts:', Object.keys(branding));
 

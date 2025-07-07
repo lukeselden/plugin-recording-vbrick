@@ -1,9 +1,20 @@
 {
-  "port": 5173,
-  "outDir": "dist",
-  "main": "index.html",
-  "pluginName": "vbrick",
-  "builderOutput": "build/branding-helper.html",
-  
   "infinity_url": "https://pexip.example.com",
+  "port": 5173,
   "branding_path": "local-plugin",
+  "pluginName": "vbrick",
+  "vbrick": {
+    "url": "https://example.rev.vbrick.com",
+    "client_id": "local-plugin",
+    "redirect_uri": "https://pexip.example.com/local-plugin/oauth-redirect"
+  },
+  "infinity": {
+    "sip_domain": "pexip.example.com"
+  },
+  "recording_type": "sip",
+  "recorder": {
+    "url": "https://rtmp-recorder.example.com",
+    "display_name": "Vbrick Recorder",
+    "legacy_dialout_api": false
+  }
+}

@@ -1,13 +1,13 @@
-import EventEmitter from 'eventemitter3'
-import { config } from './config'
-import { updateButton } from './button'
 import type { InfinityParticipant } from '@pexip/plugin-api'
-import { plugin } from './plugin'
+import EventEmitter from 'eventemitter3'
+import { updateButton } from './button'
 import { conferenceAlias } from './conferenceAlias'
+import { config } from './config'
+import { plugin } from './plugin'
 
-import { clearRecording, getRecording, setRecording, isRecording, isFailedRecording } from './vbrick/recordingState'
-import { RecordingApi, type RecordingStatus } from './vbrick/contracts'
 import { rtmpRecordingApi } from './vbrick/rtmp-recording'
+import type { RecordingApi } from './vbrick/contracts'
+import { clearRecording, getRecording, isFailedRecording, isRecording, setRecording } from './vbrick/recordingState'
 import { vcRecordingApi } from './vbrick/vc-recording'
 
 let participants: InfinityParticipant[] = []
@@ -104,11 +104,11 @@ const startRecording = async (): Promise<void> => {
 
 const stopRecording = async (): Promise<void> => {
   const recording = getRecording();
-  const stopResult = recording 
+  const stopResult = recording != null 
     ? await recordingApi.stopRecording(recording)
     : undefined;
 
-  if (stopResult?.success || !isAnotherRecordingActive()) {
+  if (stopResult?.success === true || !isAnotherRecordingActive()) {
     clearRecording();
     emitter.emit('changed')
     await plugin.ui.showToast({ message: 'Recording stopped' })
@@ -119,11 +119,12 @@ const stopRecording = async (): Promise<void> => {
 
 const getStatus = async (): Promise<void> => {
   const recording = getRecording();
-  const statusResult = recording 
-    ? await recordingApi.getStatus(recording)
-    : undefined;
+  if (recording == null) {
+    return;
+  }
+  const statusResult = await recordingApi.getStatus(recording);
 
-  if (recording && statusResult?.success) {
+  if (statusResult.success) {
     const {status, videoId = recording.videoId} = statusResult.data;
     if (status !== recording.status || videoId !== recording.videoId) {
       Object.assign(recording, { status, videoId });
