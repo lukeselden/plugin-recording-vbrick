@@ -3,3 +3,8 @@ plugins:
 - jekyll-remote-theme
 
 title: "Pexip Plugin : Recording for Vbrick"
+
+exclude:
+  - index.html
+  - dist/index.html
+

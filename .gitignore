@@ -1,5 +1,6 @@
 public/config.json
 # dist
+dist/index.html
 node_modules
 .DS_Store
 webapp3.zip
