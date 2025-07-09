@@ -14,7 +14,9 @@ export interface BuildConfig extends Partial<PluginConfig> {
   main: string;
 }
 
-const devConfig = await import('./vite.json', { with: { type: 'json' }}).catch(() => null) as null | Partial<BuildConfig>;
+const devConfig = await import('./vite.json', { with: { type: 'json' }})
+  .then(module => module.default)
+  .catch(() => null) as null | Partial<BuildConfig>;
 
 export const config: BuildConfig = {
   port: 5173,
@@ -51,7 +53,17 @@ export default defineConfig(({ command, mode }) => {
       open: config.branding_path + '/',
       cors: true,
       proxy: {
+        [`^/${config.branding_path}/plugins/${config.pluginName}/index.html`]: {
+          target: config.infinity_url,
+          changeOrigin: true,
+          secure: false,
+        },
         [config.branding_path]: {
+          target: config.infinity_url,
+          changeOrigin: true,
+          secure: false,
+        },
+        [`^/${config.branding_path}`]: {
           target: config.infinity_url,
           changeOrigin: true,
           secure: false,
@@ -123,13 +135,11 @@ const overrideConfigPlugin = (): Plugin => ({
         }
         const manifest = await remoteResponse.json();
         // add plugin entry to manifest
-        if (!Array.isArray(manifest.plugins)) {
-          manifest.plugins = [];
-        }
-        manifest.plugins.push({
+        manifest.plugins = [{
           src: '/index.html',
           sandboxValues: ['allow-same-origin', 'allow-popups', 'allow-forms']
-        });
+        }];
+
         return {
           ok: true,
           manifest
@@ -142,14 +152,15 @@ const overrideConfigPlugin = (): Plugin => ({
         };
       }
     }
-    const brandingDir = `${config.branding_path}/branding`;
+    
     server.middlewares.use((req, res, next) => {
       switch (req.url) {
         case '/config.json':
-        case `${brandingDir}/plugins/${config.pluginName}/config.json`:
+        case `/${config.branding_path}/config.json`:
+        case `/${config.branding_path}/branding/plugins/${config.pluginName}/config.json`:
           sendJson(res, config);
           return;
-        case `${brandingDir}/manifest.json`:
+        case `/${config.branding_path}/branding/manifest.json`:
           overrideManifest()
             .then(result => {
               if (result.ok) {
