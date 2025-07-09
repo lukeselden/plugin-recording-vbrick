@@ -1,6 +1,6 @@
 import type { InfinityParticipant } from '@pexip/plugin-api'
 import { Auth } from '../auth'
-import { conferenceAlias } from '../conferenceAlias'
+import { conferenceMeta } from '../conferenceAlias'
 import { config } from '../config'
 import type { Recording, RecordingApi, RecordingStatus, VideoStatus } from './contracts'
 import { makeApiRequest, type ApiResult } from './request'
@@ -21,7 +21,7 @@ async function startRecording(title: string, timeoutSeconds = 60): Promise<ApiRe
   const url = new URL(path, config.vbrick.url)
 
   const domain = config.infinity.sip_domain
-  const sipAddress = `${conferenceAlias}@${domain}`
+  const sipAddress = `${conferenceMeta.conferenceAlias}@${domain}`
   const sipPin = ''
 
   const body: StartSipRecordingRequest = { title, sipAddress, sipPin };
@@ -59,8 +59,8 @@ async function getStatus({videoId}: Recording): Promise<ApiResult<RecordingStatu
 }
 
 export const isRecordingParticipant = (participant: InfinityParticipant): boolean => {
-  const domain = new URL(config.vbrick.url).hostname
-  const recordingUri = `sip:${Auth.getUser()?.username}@${domain}`
+  const {hostname} = new URL(config.vbrick.url)
+  const recordingUri = `sip:${Auth.getUser()?.username}@${hostname}`
 
   return participant.uri === recordingUri
 }

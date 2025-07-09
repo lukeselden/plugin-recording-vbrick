@@ -3,7 +3,7 @@ import { initButton, updateButton } from './button'
 import { Auth } from './auth'
 import { Recording } from './recording'
 import { setPlugin } from './plugin'
-import { setConferenceAlias } from './conferenceAlias'
+import { setConferenceMeta } from './conferenceAlias'
 
 const plugin = await registerPlugin({
   id: 'plugin-recording-vbrick',
@@ -17,7 +17,7 @@ await initButton()
 Recording.init()
 
 plugin.events.authenticatedWithConference.add((conference) => {
-  setConferenceAlias(conference.conferenceAlias)
+  setConferenceMeta(conference.conferenceAlias, conference.conferenceName)
 })
 
 Auth.emitter.on('login', () => {

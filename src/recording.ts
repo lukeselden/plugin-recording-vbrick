@@ -1,7 +1,7 @@
 import type { InfinityParticipant } from '@pexip/plugin-api'
 import EventEmitter from 'eventemitter3'
 import { updateButton } from './button'
-import { conferenceAlias } from './conferenceAlias'
+import { conferenceMeta } from './conferenceAlias'
 import { config } from './config'
 import { plugin } from './plugin'
 
@@ -85,7 +85,7 @@ const startRecording = async (): Promise<void> => {
   }
 
   const domain = config.infinity.sip_domain
-  const uri = `${conferenceAlias}@${domain}`
+  const uri = `${conferenceMeta.conferenceAlias}@${domain}`
 
   const result = await recordingApi.startRecording(uri);
 
