@@ -2,7 +2,12 @@ import type { InfinityParticipant } from '@pexip/plugin-api'
 import { Auth } from '../auth'
 import { conferenceMeta } from '../conferenceAlias'
 import { config } from '../config'
-import type { Recording, RecordingApi, RecordingStatus, VideoStatus } from './contracts'
+import type {
+  Recording,
+  RecordingApi,
+  RecordingStatus,
+  VideoStatus
+} from './contracts'
 import { makeApiRequest, type ApiResult } from './request'
 
 interface StartSipRecordingRequest {
@@ -16,7 +21,10 @@ interface StartSipRecordingRequest {
   audioOnly?: boolean
 }
 
-async function startRecording(title: string, timeoutSeconds = 60): Promise<ApiResult<{ videoId: string }>> {
+async function startRecording(
+  title: string,
+  timeoutSeconds = 60
+): Promise<ApiResult<{ videoId: string }>> {
   const path = '/api/v2/vc/start-recording'
   const url = new URL(path, config.vbrick.url)
 
@@ -24,28 +32,32 @@ async function startRecording(title: string, timeoutSeconds = 60): Promise<ApiRe
   const sipAddress = `${conferenceMeta.conferenceAlias}@${domain}`
   const sipPin = ''
 
-  const body: StartSipRecordingRequest = { title, sipAddress, sipPin };
+  const body: StartSipRecordingRequest = { title, sipAddress, sipPin }
 
-  const response = await makeApiRequest<{ videoId: string }>(url, body, { method: 'POST', timeoutSeconds });
-  return response;
+  const response = await makeApiRequest<{ videoId: string }>(url, body, {
+    method: 'POST',
+    timeoutSeconds
+  })
+  return response
 }
 
-
-async function stopRecording({videoId}: Recording): Promise<ApiResult<void>> {
+async function stopRecording({ videoId }: Recording): Promise<ApiResult<void>> {
   const path = '/api/v2/vc/stop-recording'
   const url = new URL(path, config.vbrick.url)
 
   const body = { videoId }
-  const response = await makeApiRequest(url, body, { method: 'POST' });
-  return response;
+  const response = await makeApiRequest(url, body, { method: 'POST' })
+  return response
 }
 
-async function getStatus({videoId}: Recording): Promise<ApiResult<RecordingStatus>> {
+async function getStatus({
+  videoId
+}: Recording): Promise<ApiResult<RecordingStatus>> {
   const path = `/api/v2/vc/recording-status/${videoId}`
   const url = new URL(path, config.vbrick.url)
-  const response = await makeApiRequest<VideoStatus>(url);
+  const response = await makeApiRequest<VideoStatus>(url)
   if (!response.success) {
-    return response;
+    return response
   }
 
   /** transform response to match Recording shape (i.e. an object) */
@@ -55,11 +67,13 @@ async function getStatus({videoId}: Recording): Promise<ApiResult<RecordingStatu
       videoId,
       status: response.data
     }
-  };
+  }
 }
 
-export const isRecordingParticipant = (participant: InfinityParticipant): boolean => {
-  const {hostname} = new URL(config.vbrick.url)
+export const isRecordingParticipant = (
+  participant: InfinityParticipant
+): boolean => {
+  const { hostname } = new URL(config.vbrick.url)
   const recordingUri = `sip:${Auth.getUser()?.username}@${hostname}`
 
   return participant.uri === recordingUri
@@ -70,4 +84,4 @@ export const vcRecordingApi: RecordingApi = {
   stopRecording,
   getStatus,
   isRecordingParticipant
-};
+}

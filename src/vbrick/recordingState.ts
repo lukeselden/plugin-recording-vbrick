@@ -38,19 +38,16 @@ export const hasRecording = (): boolean => {
       : recording?.videoId
   return key != null && key !== ''
 }
-export const isRecording = (): boolean => {
-  return (
-    hasRecording() &&
-    typeof recording?.status === 'string' &&
-    activeStatuses.includes(recording.status)
-  )
-}
+export const isRecording = (): boolean =>
+  hasRecording() &&
+  typeof recording?.status === 'string' &&
+  activeStatuses.includes(recording.status)
 
 export const isConnectingRecording = (): boolean =>
-  recording?.status === 'Connecting' ||
-  recording?.status === 'WaitingForStream'
+  recording?.status === 'Connecting' || recording?.status === 'WaitingForStream'
 
-export const isActiveRecording = (): boolean => !isConnectingRecording() && isRecording()
+export const isActiveRecording = (): boolean =>
+  !isConnectingRecording() && isRecording()
 
 export const isFailedRecording = (): boolean =>
   recording?.status === 'ConnectingFailed' ||

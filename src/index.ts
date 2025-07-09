@@ -16,7 +16,6 @@ Recording.init()
 
 await initButton()
 
-
 plugin.events.authenticatedWithConference.add((conference) => {
   setConferenceMeta(conference.conferenceAlias, conference.conferenceName)
 })

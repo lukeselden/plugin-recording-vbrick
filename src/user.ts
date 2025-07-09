@@ -1,6 +1,5 @@
 import { getLocalStorage, LocalStorageKey, setLocalStorage } from './storage.js'
 
-
 export interface User {
   userId: string
   username: string
@@ -14,10 +13,9 @@ export interface User {
   expiration: Date
 }
 
-
-export let user: User | null = getLocalStorage(LocalStorageKey.User);
+export let user: User | null = getLocalStorage(LocalStorageKey.User)
 
 export const setUser = (value: User | null): void => {
-  user = value;
-  setLocalStorage(LocalStorageKey.User, user);
+  user = value
+  setLocalStorage(LocalStorageKey.User, user)
 }

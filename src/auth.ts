@@ -2,11 +2,10 @@ import EventEmitter from 'eventemitter3'
 import { config } from './config'
 import { user, setUser, type User } from './user'
 
-let codeVerifier: string
-
+let codeVerifier = ''
 const marginInterval = 20
 const defaultExpiresIn = 1800
-let intervalRefreshToken: number = 0
+let intervalRefreshToken = 0
 
 const getAuthUrl = async (): Promise<string> => {
   const authPath = '/api/v2/oauth2/authorize'
@@ -39,8 +38,8 @@ const createAccessToken = async (code: string): Promise<void> => {
   })
 
   const data: User = await response.json()
-  data.expiration = new Date(Date.now() + data.expires_in * 1000);
-  setUser(data);
+  data.expiration = new Date(Date.now() + data.expires_in * 1000)
+  setUser(data)
 
   if (intervalRefreshToken === 0) {
     startRefreshTokenInterval(
@@ -51,21 +50,15 @@ const createAccessToken = async (code: string): Promise<void> => {
   emitter.emit('login')
 }
 
-const getAccessToken = (): string => {
-  return user?.access_token ?? ''
-}
+const getAccessToken = (): string => user?.access_token ?? ''
 
-const getUser = (): User | null => {
-  return user
-}
+const getUser = (): User | null => user
 
-const isAuthenticated = (): boolean => {
-  return user != null && user.access_token !== ''
-}
+const isAuthenticated = (): boolean => user != null && user.access_token !== ''
 
-const getAuthHeader = (): Record<string, string> => {
-  return { authorization: `vbrick ${user?.access_token}` }
-}
+const getAuthHeader = (): Record<string, string> => ({
+  authorization: `vbrick ${user?.access_token}`
+})
 
 const refreshAccessToken = async (): Promise<void> => {
   if (user == null || !isAuthenticated()) {
@@ -78,17 +71,17 @@ const refreshAccessToken = async (): Promise<void> => {
   const response = await fetch(url, {
     method: 'POST',
     headers: getAuthHeader()
-  });
+  })
 
-  const {expiration} = await response.json() as Record<string, string>
-  const expireDelta = new Date(expiration).getTime() - Date.now();
-  user.expires_in = Math.floor(expireDelta / 1000);
-  setUser(user);
+  const { expiration } = (await response.json()) as Record<string, string>
+  const expireDelta = new Date(expiration).getTime() - Date.now()
+  user.expires_in = isNaN(expireDelta)
+    ? defaultExpiresIn
+    : Math.floor(expireDelta / 1000)
+  setUser(user)
 
   if (intervalRefreshToken === 0) {
-    startRefreshTokenInterval(
-      (user?.expires_in ?? defaultExpiresIn) - marginInterval
-    )
+    startRefreshTokenInterval(user.expires_in - marginInterval)
   }
 
   emitter.emit('refreshed_token')
@@ -97,12 +90,14 @@ const refreshAccessToken = async (): Promise<void> => {
 const isSessionValid = async (): Promise<boolean> => {
   const path = '/api/v2/user/session'
   const url = new URL(path, config.vbrick.url)
-  if (!isAuthenticated()) return false;
+  if (!isAuthenticated()) return false
   const response = await fetch(url, {
     headers: getAuthHeader()
-  }).catch(e => { console.error(e) });
+  }).catch((e: unknown) => {
+    console.error(e)
+  })
 
-  return response?.status === 200;
+  return response?.status === 200
 }
 
 const logout = async (): Promise<void> => {
@@ -119,7 +114,9 @@ const logout = async (): Promise<void> => {
         ...getAuthHeader(),
         'Content-Type': 'application/json'
       }
-    }).catch(e => { console.warn(e) });
+    }).catch((e: unknown) => {
+      console.warn(e)
+    })
   }
   cleanSession()
   stopRefreshInterval()
@@ -127,12 +124,12 @@ const logout = async (): Promise<void> => {
 }
 
 const cleanSession = (): void => {
-  setUser(null);
+  setUser(null)
 }
 
 const startRefreshTokenInterval = (interval: number): void => {
   intervalRefreshToken = setInterval(() => {
-    refreshAccessToken().catch((e) => {
+    refreshAccessToken().catch((e: unknown) => {
       console.error(e)
     })
   }, interval * 1000)
@@ -178,10 +175,12 @@ const sha256hash = async (value: string): Promise<string> => {
   return btoa(binary).replace(/\//g, '_').replace(/\+/g, '-').replace(/=+$/, '')
 }
 
-const handleMessage = (event: any): void => {
-  const search: string = event.data.search
+const handleMessage = (event: MessageEvent<{ search?: string }>): void => {
+  const {
+    data: { search }
+  } = event
 
-  if (search != null) {
+  if (search != null && search !== '') {
     const code = new URLSearchParams(search).get('code')
     if (code != null) {
       console.log('code', code)

@@ -5,7 +5,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile'
 
 import inlineAssetsPlugin from './src-helper/vite-plugin-bundler.js'
 
-import {config, updateDevConfig, type BuildConfig} from './vite.config.js';
+import { config, updateDevConfig, type BuildConfig } from './vite.config.js'
 
 interface HelperConfig extends BuildConfig {
   builderOutput: string
@@ -13,19 +13,17 @@ interface HelperConfig extends BuildConfig {
 
 const helperConfig: HelperConfig = {
   builderOutput: 'dist/branding-helper.html',
-  ...config,
+  ...config
 }
 
-const VIRTUAL_ID = 'virtual:bundle';
+const VIRTUAL_ID = 'virtual:bundle'
 
 export default defineConfig(({ command, mode }) => {
   if (command === 'serve') {
-    updateDevConfig(helperConfig);
+    updateDevConfig(helperConfig)
   }
   // during development set defauls for helper page. But when using build command don't include
-  const defaults = command === 'serve'
-    ? helperConfig
-    : undefined;
+  const defaults = command === 'serve' ? helperConfig : undefined
 
   return {
     // root: 'src-helper',
@@ -37,8 +35,8 @@ export default defineConfig(({ command, mode }) => {
       rollupOptions: {
         input: {
           main: 'branding-helper.html'
-        },
-      },
+        }
+      }
     },
     server: {
       https: {},
@@ -60,5 +58,5 @@ export default defineConfig(({ command, mode }) => {
         defaults
       })
     ]
-  };
-});
+  }
+})

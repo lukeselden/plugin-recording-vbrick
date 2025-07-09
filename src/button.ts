@@ -85,7 +85,11 @@ const getGroup = async (): Promise<GroupButtonPayload[]> => {
       roles: ['chair'],
       opensPopup: {
         id: videosPopUpId,
-        openParams: [config.vbrick.url + '/#/media/uploads?sortField=whenUploaded', '', popUpOpts]
+        openParams: [
+          config.vbrick.url + '/#/media/uploads?sortField=whenUploaded',
+          '',
+          popUpOpts
+        ]
       }
     },
     {
@@ -100,7 +104,7 @@ const getGroup = async (): Promise<GroupButtonPayload[]> => {
 }
 
 const handleClickGroup = ({ buttonId }: { buttonId: string }): void => {
-  switch (buttonId) {
+  switch (buttonId as ButtonId) {
     case ButtonId.Login: {
       focusPopUp(authPopUpId)
       break

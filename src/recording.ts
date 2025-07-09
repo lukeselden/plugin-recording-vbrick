@@ -4,20 +4,20 @@ import { conferenceMeta } from './conferenceAlias'
 import { config } from './config'
 import { plugin } from './plugin'
 
-import { rtmpRecordingApi } from './vbrick/rtmp-recording'
 import type { RecordingApi, VideoStatus } from './vbrick/contracts'
 import {
   clearRecording,
   getRecording,
-  isRecording,
   hasRecording,
-  setRecording,
-  updateRecording,
   isActiveRecording,
-  isConnectingRecording
+  isConnectingRecording,
+  isRecording,
+  setRecording,
+  updateRecording
 } from './vbrick/recordingState'
-import { isRecordingParticipant, vcRecordingApi } from './vbrick/vc-recording'
 import { timeoutAfter } from './vbrick/request.js'
+import { rtmpRecordingApi } from './vbrick/rtmp-recording'
+import { vcRecordingApi } from './vbrick/vc-recording'
 
 let participants: InfinityParticipant[] = []
 
@@ -105,7 +105,8 @@ function refreshRecordingStatus(
   if (
     recording == null ||
     participant == null ||
-    (recording.participantUuid != null && participant.uuid !== recording.participantUuid)
+    (recording.participantUuid != null &&
+      participant.uuid !== recording.participantUuid)
   ) {
     return
   }
@@ -208,7 +209,6 @@ async function scheduleTimeoutError(timeoutSeconds = 60): Promise<void> {
   try {
     await timeoutAfter(whenChanged, timeoutSeconds)
   } catch (error) {
-    const recording = getRecording()
     if (!isConnectingRecording()) return
 
     const active = getCurrentRecordingParticipant()
@@ -235,7 +235,7 @@ const getStatus = async (): Promise<VideoStatus | undefined> => {
       data: { status, videoId = recording.videoId }
     } = statusResult
     if (status !== recording.status || videoId !== recording.videoId) {
-      updateRecording({ status, videoId });
+      updateRecording({ status, videoId })
       emitter.emit('changed')
     }
     // if (isFailedRecording()) {

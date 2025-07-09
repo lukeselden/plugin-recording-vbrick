@@ -7,6 +7,9 @@ export let conferenceMeta: ConferenceMeta = {
   conferenceName: undefined
 }
 
-export const setConferenceMeta = (conferenceAlias: string, conferenceName?: string): void => {
+export const setConferenceMeta = (
+  conferenceAlias: string,
+  conferenceName?: string
+): void => {
   conferenceMeta = { conferenceAlias, conferenceName }
 }

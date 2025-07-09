@@ -26,7 +26,12 @@ const configuration = [
             "@typescript-eslint/no-unsafe-call": "warn",
             "arrow-body-style": "warn",
             "no-console": "off",
-            "@typescript-eslint/no-unsafe-type-assertion": "off"
+            "@typescript-eslint/no-unsafe-type-assertion": "off",
+            "@typescript-eslint/no-unsafe-assignment": "warn",
+            "@typescript-eslint/no-explicit-any": "off",
+            "@typescript-eslint/init-declarations": "warn",
+            "@typescript-eslint/prefer-literal-enum-member": "warn",
+            "@typescript-eslint/no-unnecessary-type-parameters": "warn"
         }
     }
 ];
