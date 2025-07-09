@@ -50,7 +50,6 @@ const getGroup = async (): Promise<GroupButtonPayload[]> => {
     return [
       {
         id: ButtonId.Login,
-        position: 'toolbar',
         icon: 'IconLeave',
         tooltip: 'Log in',
         roles: ['chair'],
@@ -68,7 +67,6 @@ const getGroup = async (): Promise<GroupButtonPayload[]> => {
     Recording.isRecording()
       ? {
           id: ButtonId.Stop,
-          position: 'toolbar',
           icon: 'IconStopRound',
           tooltip: 'Stop recording',
           roles: ['chair'],
@@ -76,14 +74,12 @@ const getGroup = async (): Promise<GroupButtonPayload[]> => {
         }
       : {
           id: ButtonId.Start,
-          position: 'toolbar',
           icon: 'IconPlayRound',
           tooltip: 'Start recording',
           roles: ['chair']
         },
     {
       id: ButtonId.Videos,
-      position: 'toolbar',
       icon: 'IconOpenInNew',
       tooltip: 'Manage recordings',
       roles: ['chair'],
@@ -94,7 +90,6 @@ const getGroup = async (): Promise<GroupButtonPayload[]> => {
     },
     {
       id: ButtonId.Logout,
-      position: 'toolbar',
       icon: 'IconLeave',
       tooltip: 'Log out',
       roles: ['chair']
