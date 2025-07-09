@@ -12,9 +12,10 @@ const plugin = await registerPlugin({
 
 setPlugin(plugin)
 
+Recording.init()
+
 await initButton()
 
-Recording.init()
 
 plugin.events.authenticatedWithConference.add((conference) => {
   setConferenceMeta(conference.conferenceAlias, conference.conferenceName)

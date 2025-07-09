@@ -3,10 +3,11 @@ import type { ApiResult } from './request'
 
 export interface Recording {
   videoId?: string;
-  status?: VideoStatus;
+  status: VideoStatus;
   rtmpStreamKey?: string;
   rtmpUrl?: string;
   lastModified?: string;
+  participantUuid?: string;
 }
 
 export interface RecordingStatus {

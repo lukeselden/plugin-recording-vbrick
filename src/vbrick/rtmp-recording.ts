@@ -52,30 +52,14 @@ async function startRecording(title: string, timeoutSeconds = 60): Promise<ApiRe
   };
   const response = await makeApiRequest<Record<string, string>>(url, body, { method: 'POST', timeoutSeconds });
 
-  if (!response.success) {
-    return response;
+  if (response.success) {
+    void dialOutParticipant(response.data.rtmpUrl);
   }
-
-  // then trigger pexip to start sending to that RTMP url
-  try {
-    return {
-      success: true,
-      data: {
-        ...response.data,
-        participant: await timeoutAfter(dialOutParticipant(response.data.rtmpUrl), timeoutSeconds)
-      }
-    }
-  } catch (error) {
-    return {
-      ...response,
-      success: false,
-      error: String(error)
-    }
-  }
+  return response;
 }
 
 async function dialOutParticipant(rtmpUrl: string): Promise<Participant> {
-  return await plugin.conference.dialOut({
+  const response =  await plugin.conference.dialOut({
     destination: rtmpUrl,
     // use 'auto' (call routing rules) unless flag is set in the config
     protocol: config.recorder.legacy_dialout_api === true ? 'rtmp' : 'auto',
@@ -85,7 +69,7 @@ async function dialOutParticipant(rtmpUrl: string): Promise<Participant> {
       text: config.recorder.display_name
     }
   });
-
+  return response;
 }
 
 async function stopRecording({rtmpStreamKey}: Recording): Promise<ApiResult<void>> {
