@@ -3,7 +3,7 @@ import { config } from '../config'
 import { plugin } from '../plugin'
 import type { Recording, RecordingApi, RecordingStatus } from './contracts'
 import { makeApiRequest, type ApiResult } from './request'
-import { conferenceMeta } from '../conferenceAlias.js'
+import { conferenceMeta } from '../conference.js'
 import { getRecording } from './recordingState.js'
 
 /**

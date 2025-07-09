@@ -1,6 +1,6 @@
 import type { InfinityParticipant } from '@pexip/plugin-api'
 import { Auth } from '../auth'
-import { conferenceMeta } from '../conferenceAlias'
+import { conferenceMeta } from '../conference'
 import { config } from '../config'
 import type {
   Recording,

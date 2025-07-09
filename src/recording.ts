@@ -1,9 +1,15 @@
 import type { InfinityParticipant } from '@pexip/plugin-api'
 import EventEmitter from 'eventemitter3'
-import { conferenceMeta } from './conferenceAlias'
+import { conferenceMeta, disablePINCheck, toggleRecordingIndicator } from './conference'
 import { config } from './config'
 import { plugin } from './plugin'
 
+import {
+  findParticipant,
+  getParticipantVideoStatus,
+  setParticipants,
+  waitForParticipantList
+} from './participants.js'
 import type { RecordingApi, VideoStatus } from './vbrick/contracts'
 import {
   clearRecording,
@@ -19,52 +25,33 @@ import { timeoutAfter } from './vbrick/request.js'
 import { rtmpRecordingApi } from './vbrick/rtmp-recording'
 import { vcRecordingApi } from './vbrick/vc-recording'
 
-let participants: InfinityParticipant[] = []
-
 const recordingApi: RecordingApi =
   config.recording_type === 'rtmp' ? rtmpRecordingApi : vcRecordingApi
 
 const init = (): void => {
-  const listeners = [
+  const unsubscribes = [
     plugin.events.participantJoined.add(async ({ participant }) => {
       if (recordingApi.isRecordingParticipant(participant)) {
         if (isConnectingRecording()) {
           refreshRecordingStatus(participant)
         }
 
-        void plugin.conference.setLayout({
-          transforms: { recording_indicator: true }
-        })
-
-        try {
-          // With this we avoid having to pass the PIN (host or guest) to Vbrick
-          await plugin.conference.setRole({
-            role: 'chair',
-            participantUuid: participant.uuid
-          })
-          await plugin.conference.setRole({
-            role: 'guest',
-            participantUuid: participant.uuid
-          })
-        } catch (error) {
-          // fails if participant failed to connect
-        }
+        void toggleRecordingIndicator(true)
+        await disablePINCheck(participant.uuid)
       }
     }),
 
     plugin.events.participantLeft.add(({ participant }) => {
       if (recordingApi.isRecordingParticipant(participant)) {
         refreshRecordingStatus(participant, true)
-        void plugin.conference.setLayout({
-          transforms: { recording_indicator: false }
-        })
+        void toggleRecordingIndicator(false)
       }
     }),
 
     // Check if we were recording before. This way we can recover the state in
     // case the user reload the page
     plugin.events.participants.add(({ participants: value }) => {
-      participants = value
+      setParticipants(value)
       // check if recording participant has connected
       if (isConnectingRecording()) {
         refreshRecordingStatus()
@@ -76,23 +63,12 @@ const init = (): void => {
     if (participant.role === 'chair') {
       void verifyRecordingOnJoin()
     } else {
-      listeners.forEach((listener) => {
-        listener()
+      // remove listeners if just guest
+      unsubscribes.forEach((detach) => {
+        detach()
       })
     }
   })
-}
-
-function getParticipantVideoStatus(
-  { serviceType }: InfinityParticipant,
-  isDisconnect = false
-): VideoStatus {
-  if (isDisconnect) {
-    return serviceType === 'connecting'
-      ? 'ConnectingFailed'
-      : 'RecordingFinished'
-  }
-  return serviceType === 'connecting' ? 'WaitingForStream' : 'Recording'
 }
 
 function refreshRecordingStatus(
@@ -125,21 +101,7 @@ async function verifyRecordingOnJoin(): Promise<void> {
     return
   }
   try {
-    // wait for a participant list and successfully connected
-    const whenJoined = Promise.all([
-      new Promise<InfinityParticipant[]>((resolve) =>
-        plugin.events.participants.addOnce(({ participants }) => {
-          resolve(participants)
-        })
-      ),
-      new Promise<void>((resolve) =>
-        plugin.events.authenticatedWithConference.addOnce(() => {
-          resolve()
-        })
-      )
-    ])
-
-    await timeoutAfter(whenJoined, 15).catch((err: unknown) => {
+    await waitForParticipantList(15).catch((err: unknown) => {
       console.warn('Timeout waiting for participant list on first join', err)
     })
     const recording = getRecording()
@@ -202,27 +164,6 @@ const stopRecording = async (): Promise<void> => {
   }
 }
 
-async function scheduleTimeoutError(timeoutSeconds = 60): Promise<void> {
-  const whenChanged = new Promise((resolve, reject) =>
-    emitter.once('changed', resolve)
-  )
-  try {
-    await timeoutAfter(whenChanged, timeoutSeconds)
-  } catch (error) {
-    if (!isConnectingRecording()) return
-
-    const active = getCurrentRecordingParticipant()
-    if (active != null && active.serviceType !== 'connecting') {
-      updateRecording({ status: 'Recording', participantUuid: active.uuid })
-      emitter.emit('changed')
-    } else {
-      updateRecording({ status: 'ConnectingFailed' })
-      emitter.emit('changed')
-      await plugin.ui.showToast({ message: 'Cannot start the recording' })
-    }
-  }
-}
-
 const getStatus = async (): Promise<VideoStatus | undefined> => {
   const recording = getRecording()
   if (recording == null) {
@@ -245,23 +186,40 @@ const getStatus = async (): Promise<VideoStatus | undefined> => {
   }
 }
 
-const getCurrentRecordingParticipant = (): InfinityParticipant | undefined => {
-  const { participantUuid } = getRecording() ?? {}
-  return participantUuid == null
-    ? getRecordingParticipant()
-    : participants.find((p) => p.uuid === participantUuid)
+async function scheduleTimeoutError(timeoutSeconds = 60): Promise<void> {
+  const whenChanged = new Promise((resolve, reject) =>
+    emitter.once('changed', resolve)
+  )
+  try {
+    await timeoutAfter(whenChanged, timeoutSeconds)
+  } catch (error) {
+    if (!isConnectingRecording()) return
+
+    const active = getCurrentRecordingParticipant()
+    if (active != null && active.serviceType !== 'connecting') {
+      updateRecording({ status: 'Recording', participantUuid: active.uuid })
+      emitter.emit('changed')
+    } else {
+      updateRecording({ status: 'ConnectingFailed' })
+      emitter.emit('changed')
+      await plugin.ui.showToast({ message: 'Cannot start the recording' })
+    }
+  }
 }
 
-const getRecordingParticipant = (
-  list = participants
-): InfinityParticipant | undefined =>
-  list.find((participant) => recordingApi.isRecordingParticipant(participant))
+const getCurrentRecordingParticipant = (): InfinityParticipant | undefined => {
+  const { participantUuid } = getRecording() ?? {}
+  return findParticipant(participantUuid == null
+    ? recordingApi.isRecordingParticipant
+    : p => p.uuid === participantUuid
+  )
+}
 
 /**
  * Check if there is another user making a recording.
  */
 const isAnotherRecordingActive = (): boolean =>
-  getRecordingParticipant() != null
+  findParticipant(recordingApi.isRecordingParticipant) != null
 
 const emitter = new EventEmitter()
 
@@ -272,6 +230,5 @@ export const Recording = {
   getStatus,
   hasRecording,
   isRecording,
-  isRecordingParticipant: recordingApi.isRecordingParticipant,
   emitter
 }

@@ -3,7 +3,7 @@ import { initButton, updateButton } from './button'
 import { Auth } from './auth'
 import { Recording } from './recording'
 import { setPlugin } from './plugin'
-import { setConferenceMeta } from './conferenceAlias'
+import { setConferenceMeta } from './conference'
 
 const plugin = await registerPlugin({
   id: 'plugin-recording-vbrick',
