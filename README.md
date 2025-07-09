@@ -4,6 +4,10 @@ This plugin allow the user to record a conference in the Vbrick platform. Once
 the user click on the recording button, Vbrick will join to the VMR as a SIP/RTMP
 participant and will record the call.
 
+## Quick Start Configuration
+
+[Configuration helper page](dist/branding-helper.html)
+
 ## How to use
 
 The host user will see a new button in the toolbar and the first time that the
@@ -82,7 +86,7 @@ In order to use this plugin for recording our Pexip deployment should comply wit
 
 ### Option 1. Use configuration tool
 
-Use the [Branding helper page](build/branding-helper.html) to generate a plugin configuration and add it to a [branding package](https://docs.pexip.com/admin/customize_clients.htm) zip file.
+Use the [Branding helper page](dist/branding-helper.html) to generate a plugin configuration and add it to a [branding package](https://docs.pexip.com/admin/customize_clients.htm) zip file.
 
 *If building from source you may need to run `npm run build && npm run build:helper` to generate this file*
 
