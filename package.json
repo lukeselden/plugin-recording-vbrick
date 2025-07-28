@@ -1,8 +1,8 @@
 {
-    "name": "@pexip/basic-plugin",
+    "name": "@pexip/vbrick-record-plugin",
     "version": "1.0.0",
     "description": "",
-    "main": "index.js",
+    "main": "index.html",
     "type": "module",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
