@@ -106,9 +106,20 @@ async function getStatus({
   return response
 }
 
-const { hostname: recorderHost } = new URL(config.recorder.url)
+function tryParseURL(value: string): URL | undefined {
+  try {
+    return new URL(value);
+  } catch (error) {
+    return undefined;
+  }
+}
+
+const recorderHost = (config.recording_type === 'rtmp')
+  ? tryParseURL(config.recorder.url)?.hostname
+  : undefined;
+
 const isRecordingParticipant = ({ uri }: InfinityParticipant): boolean => {
-  if (!/^rtmps?:\/\//.test(uri)) return false
+  if (!/^rtmps?:\/\//.test(uri) || recorderHost == null) return false
   // exact match
   const { rtmpUrl } = getRecording() ?? {}
   if (rtmpUrl != null && uri === rtmpUrl) return true
